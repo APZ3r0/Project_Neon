@@ -135,3 +135,30 @@ The command performs safety checks to ensure the destination lives outside the
 current repository and is empty before copying. Add `--no-tests` if you only
 want the application code without the unit tests.
 
+## Repository Layout
+
+All code that powers the brief generator, simulation engine, and exporter lives
+under the `src/neon_ascendant/` package, while tests are grouped under
+`tests/`. The high-level structure looks like:
+
+```
+Project_Neon/
+├── README.md                # Concept overview, tooling instructions, repo map
+├── src/
+│   └── neon_ascendant/
+│       ├── __init__.py      # Package exports for CLI modules and data helpers
+│       ├── data.py          # Lore-driven data definitions (archetypes, gear, etc.)
+│       ├── exporter.py      # Utility to copy the repo into a Codespace or workspace
+│       ├── game.py          # Mission brief generator primitives
+│       ├── main.py          # CLI for creating mission briefs
+│       ├── simulate.py      # CLI entry point for the mission simulator
+│       └── simulation.py    # Core simulation engine for mission phases
+└── tests/
+    ├── test_exporter.py     # Ensures exporter copies content and validates destinations
+    ├── test_game.py         # Covers mission brief generation behavior
+    └── test_simulation.py   # Validates deterministic simulation outcomes
+```
+
+If you need to locate a specific subsystem, this map shows exactly where each
+component resides inside the repository.
+
