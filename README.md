@@ -1,4 +1,6 @@
-# Neon Ascendant – Concept Overview
+# Project_Neon
+
+## Neon Ascendant – Concept Overview
 
 **Neon Ascendant** is a cyberpunk action-RPG looter-shooter that blends the dark fantasy progression of *Diablo IV* with the high-stakes extraction tension of *Escape from Tarkov*. Players step into the role of freelance operatives—Ascendants—who harvest power from unstable AI echoes in the megacity of Erebus Prime.
 
