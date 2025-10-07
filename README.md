@@ -1,6 +1,10 @@
-# Neon Ascendant – Concept Overview
+# Project_Neon
+
+## Neon Ascendant – Concept Overview
 
 **Neon Ascendant** is a cyberpunk action-RPG looter-shooter that blends the dark fantasy progression of *Diablo IV* with the high-stakes extraction tension of *Escape from Tarkov*. Players step into the role of freelance operatives—Ascendants—who harvest power from unstable AI echoes in the megacity of Erebus Prime.
+
+> **Main branch status:** The mission simulation engine, CLI tooling, and data models that were previously staged on the `work` branch are now available directly on `main`. Follow the usage instructions below to run simulations without switching branches.
 
 ## Core Vision
 - Fuse ARPG depth with tactical shooter combat and extraction stakes.
@@ -82,4 +86,81 @@
 - Prototype hybrid camera system with responsive controls.
 - Develop loot generation pipeline with rarity and affix rules.
 - Script branching narrative framework supporting player alignment.
+
+## Prototype Tools in This Repository
+
+To begin translating the high-level concept into tangible artifacts, the
+repository now contains a lightweight Python package that models core lore
+elements (archetypes, abilities, districts, factions) and can procedurally
+generate **mission briefs** inspired by the design pillars above.
+
+### Generating Mission Briefs
+
+```bash
+python -m neon_ascendant.main --count 3 --seed 13
+```
+
+The command prints Markdown-formatted operations that combine archetypes,
+weapons, implants, and extraction constraints—useful for design workshops or
+worldbuilding sessions. Supply `--output brief.md` to save the results to a
+file.
+
+> **Tip:** The module lives in `src/`, so ensure `PYTHONPATH=src` is available
+> (for example, `PYTHONPATH=src python -m neon_ascendant.main`).
+
+### Running Mission Simulations
+
+Once you have a mission pitch you like, pressure-test it with the text-based
+simulator. The tool walks through infiltration, combat, data capture, and
+extraction and reports how the featured ability and implants influence each
+phase.
+
+```bash
+PYTHONPATH=src python -m neon_ascendant.simulate --archetype Specter --district "Ghost Grid" --seed 7
+```
+
+Adjust `--difficulty` to see how tougher enemy responses shift the outcome, or
+omit `--archetype`/`--district` to let the simulator choose at random. Provide
+`--output report.md` to write a Markdown summary for documentation.
+
+### Exporting the Project to a Codespace or External Workspace
+
+Need to mirror the repository into a fresh GitHub Codespace such as
+`https://expert-succotash-75g96w74jwcpx47.github.dev/`? Use the exporter CLI to
+copy every file (including tests and documentation) into a destination folder.
+
+```bash
+PYTHONPATH=src python -m neon_ascendant.exporter /workspaces/expert-succotash-75g96w74jwcpx47
+```
+
+The command performs safety checks to ensure the destination lives outside the
+current repository and is empty before copying. Add `--no-tests` if you only
+want the application code without the unit tests.
+
+## Repository Layout
+
+All code that powers the brief generator, simulation engine, and exporter lives
+under the `src/neon_ascendant/` package, while tests are grouped under
+`tests/`. The high-level structure looks like:
+
+```
+Project_Neon/
+├── README.md                # Concept overview, tooling instructions, repo map
+├── src/
+│   └── neon_ascendant/
+│       ├── __init__.py      # Package exports for CLI modules and data helpers
+│       ├── data.py          # Lore-driven data definitions (archetypes, gear, etc.)
+│       ├── exporter.py      # Utility to copy the repo into a Codespace or workspace
+│       ├── game.py          # Mission brief generator primitives
+│       ├── main.py          # CLI for creating mission briefs
+│       ├── simulate.py      # CLI entry point for the mission simulator
+│       └── simulation.py    # Core simulation engine for mission phases
+└── tests/
+    ├── test_exporter.py     # Ensures exporter copies content and validates destinations
+    ├── test_game.py         # Covers mission brief generation behavior
+    └── test_simulation.py   # Validates deterministic simulation outcomes
+```
+
+If you need to locate a specific subsystem, this map shows exactly where each
+component resides inside the repository.
 
