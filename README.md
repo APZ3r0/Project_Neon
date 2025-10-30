@@ -137,6 +137,22 @@ The command performs safety checks to ensure the destination lives outside the
 current repository and is empty before copying. Add `--no-tests` if you only
 want the application code without the unit tests.
 
+### Creating a Downloadable ZIP Bundle
+
+If you simply need a ready-made archive that you can download and unpack for
+testing, run the archive helper. By default it writes to `dist/` and packages
+both the source code and test suite.
+
+```bash
+PYTHONPATH=src python -m neon_ascendant.archive dist/neon_ascendant_bundle.zip
+```
+
+Pass `--no-tests` to omit the test suite. The command uses `git ls-files`, so
+only tracked project files end up in the resulting ZIP.
+
+> **Note:** The default `dist/` output directory is ignored by Git, keeping
+> generated archives out of version control.
+
 ## Repository Layout
 
 All code that powers the brief generator, simulation engine, and exporter lives
@@ -149,6 +165,7 @@ Project_Neon/
 ├── src/
 │   └── neon_ascendant/
 │       ├── __init__.py      # Package exports for CLI modules and data helpers
+│       ├── archive.py       # Create ZIP bundles of the tracked repository files
 │       ├── data.py          # Lore-driven data definitions (archetypes, gear, etc.)
 │       ├── exporter.py      # Utility to copy the repo into a Codespace or workspace
 │       ├── game.py          # Mission brief generator primitives
@@ -157,6 +174,7 @@ Project_Neon/
 │       └── simulation.py    # Core simulation engine for mission phases
 └── tests/
     ├── test_exporter.py     # Ensures exporter copies content and validates destinations
+    ├── test_archive.py      # Confirms ZIP bundles contain the expected files
     ├── test_game.py         # Covers mission brief generation behavior
     └── test_simulation.py   # Validates deterministic simulation outcomes
 ```
