@@ -2,6 +2,7 @@
 
 from .archive import create_archive
 from .data import Ability, Archetype, District, Faction, Implant, Weapon, build_codex
+from .dismemberment import DismemberEvent, DismembermentSystem, LimbProfile
 from .exporter import export_repository
 from .game import MissionGenerator, MissionBrief
 from .simulation import MissionReport, SimulationEngine, StageResult, format_report
@@ -13,6 +14,9 @@ __all__ = [
     "District",
     "Faction",
     "Implant",
+    "DismemberEvent",
+    "DismembermentSystem",
+    "LimbProfile",
     "MissionBrief",
     "MissionGenerator",
     "MissionReport",
