@@ -8,6 +8,7 @@ from typing import Iterable, List, Sequence
 
 from .data import Archetype, District, Implant, Weapon, build_codex
 from .game import MissionBrief, MissionGenerator
+from .dismemberment import DismemberEvent, DismembermentSystem
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,7 @@ class StageResult:
     threshold: int
     success: bool
     narration: str
+    dismember_event: DismemberEvent | None = None
 
 
 @dataclass(frozen=True)
@@ -170,6 +172,7 @@ class SimulationEngine:
         all_success = True
         ability_focus = _ABILITY_SYNERGY.get(brief.featured_ability.name)
         implant_focus = _IMPLANT_SYNERGY.get(brief.backup_implant.slot)
+        dismemberment = DismembermentSystem(rng=self._random)
 
         for index, stage in enumerate(_STAGES):
             stat_value = profile[stage.focus_stat]
@@ -178,6 +181,7 @@ class SimulationEngine:
             narration_bits = [
                 f"{stage.name}: {brief.district.hazards[index % len(brief.district.hazards)]} complicates the approach."
             ]
+            dismember_event: DismemberEvent | None = None
 
             if ability_focus == stage.focus_stat:
                 roll += 2
@@ -190,6 +194,25 @@ class SimulationEngine:
                 narration_bits.append(
                     f"{brief.backup_implant.name} reinforces {stage.focus_stat} protocols"
                 )
+
+            if stage.name == "Combat Clash":
+                attack_vector = self._choose(("frontal", "flanking", "low", "aerial"))
+                gore_bias = 0.45
+                if ability_focus == stage.focus_stat:
+                    gore_bias += 0.2
+                if brief.primary_weapon.category == "Experimental":
+                    gore_bias += 0.1
+                gore_bias = max(0.2, min(0.85, gore_bias))
+
+                dismember_event = dismemberment.resolve_impact(
+                    weapon_category=brief.primary_weapon.category,
+                    attack_vector=attack_vector,
+                    target_resilience=difficulty + index,
+                    armor_rating=self._random.randint(1, 3),
+                    gore_bias=gore_bias,
+                    bonus_force=1 if ability_focus == "assault" else 0,
+                )
+                narration_bits.append(dismember_event.description)
 
             success = roll >= threshold
             if success:
@@ -210,6 +233,7 @@ class SimulationEngine:
                     threshold=threshold,
                     success=success,
                     narration=" ".join(narration_bits),
+                    dismember_event=dismember_event,
                 )
             )
 
@@ -244,15 +268,15 @@ def format_report(report: MissionReport) -> str:
 
     for stage in report.stages:
         status = "Success" if stage.success else "Setback"
-        lines.extend(
-            [
-                f"### {stage.name} — {status}",
-                f"*Challenge:* {stage.challenge}",
-                f"*Roll:* {stage.roll} vs difficulty {stage.threshold}",
-                stage.narration,
-                "",
-            ]
-        )
+        stage_lines = [
+            f"### {stage.name} — {status}",
+            f"*Challenge:* {stage.challenge}",
+            f"*Roll:* {stage.roll} vs difficulty {stage.threshold}",
+        ]
+        if stage.dismember_event is not None:
+            stage_lines.append(f"*Dismemberment:* {stage.dismember_event.summary()}")
+        stage_lines.extend([stage.narration, ""])
+        lines.extend(stage_lines)
 
     resolution = "Extraction successful" if report.success else "Extraction compromised"
     lines.append(f"**Result:** {resolution}.")
