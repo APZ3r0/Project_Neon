@@ -1,0 +1,18 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.3",
+  "Category": "Games",
+  "Description": "Unreal Engine module that encapsulates the Neon Ascendant mission generator and data sets.",
+  "Modules": [
+    {
+      "Name": "NeonAscendant",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "TargetPlatforms": [
+    "Win64",
+    "Linux"
+  ],
+  "Plugins": []
+}
