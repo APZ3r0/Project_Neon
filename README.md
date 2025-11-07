@@ -113,7 +113,9 @@ file.
 Once you have a mission pitch you like, pressure-test it with the text-based
 simulator. The tool walks through infiltration, combat, data capture, and
 extraction and reports how the featured ability and implants influence each
-phase.
+phase. Combat stages now pipe their narration through the **dismemberment physics**
+model, so mission logs surface cinematic limb damage when the assault team lands
+decisive blows.
 
 ```bash
 PYTHONPATH=src python -m neon_ascendant.simulate --archetype Specter --district "Ghost Grid" --seed 7
@@ -152,6 +154,112 @@ only tracked project files end up in the resulting ZIP.
 
 > **Note:** The default `dist/` output directory is ignored by Git, keeping
 > generated archives out of version control.
+
+### Cinematic Dismemberment Sandbox
+
+If you want to rapidly ideate on takedowns outside of the full mission flow,
+use the standalone dismemberment system. The module now leans on lightweight
+physics rather than pure dice rolls: weapon mass, projectile velocity, attack
+vector, and armour damping combine to estimate impact impulse and peak force.
+Those values are compared against limb-specific shear thresholds to determine
+whether the result is an intact limb, critical damage, or full severance. The
+helper returns both the raw measurements and a designer-friendly description
+you can drop into briefs or encounter notes.
+
+```python
+>>> from neon_ascendant.dismemberment import DismembermentSystem
+>>> import random
+>>> system = DismembermentSystem(rng=random.Random(11))
+>>> event = system.resolve_impact(
+...     weapon_category="Railgun",
+...     attack_vector="aerial",
+...     target_resilience=1,
+...     armor_rating=0,
+...     gore_bias=0.8,
+...     bonus_force=5,
+... )
+>>> event.summary()
+'Severed right arm (impulse 55.9 vs resistance 5.7)'
+>>> event.description
+'Descending Strike hits with 55.9 N·s against 5.7 kN. Right Arm detaches amid sparking implants and coolant spray. Momentum surges forward.'
+```
+
+## Unreal Engine Integration
+
+The Unreal layer mirrors the Python prototype so designers can playtest and
+package content without leaving the editor. All Unreal-specific automation and
+editor helpers live under the `unreal_tools/` and `Build/` directories in this
+repository.
+
+### Project Setup
+
+1. Install Unreal Engine 5.3 (matching the CI workflow).
+2. Place the repository in a location accessible to the engine and create a
+   `Project_Neon.uproject` file at the repository root. The Python prototype can
+   continue to live under `src/`—no changes are required for coexistence.
+3. Enable the Python Editor Script Plugin so the commandlets can be imported.
+
+> **Tip:** Keep `PYTHONPATH=src` available when launching the editor to share
+> data models between the Unreal layer and the existing Python tools.
+
+### Mission Brief Commandlet
+
+- Location: `unreal_tools/commandlets/mission_brief_commandlet.py`
+- Entry point: `MissionBriefCommandlet` (registered with Unreal's automated
+  commandlet system)
+
+Run the generator from the command line to convert Blueprint mission data into
+localized text assets:
+
+```bash
+UE_ROOT=/path/to/UnrealEngine \
+"$UE_ROOT/Engine/Binaries/Linux/UnrealEditor" Project_Neon.uproject \
+  -run=MissionBriefCommandlet \
+  -input=/Game/Missions/Data \
+  -output=/Game/Missions/Briefs \
+  -locale=en
+```
+
+The commandlet reads any asset that exposes `mission_id`, `title`, `summary`,
+and `objectives` properties—matching the schema used by `src/neon_ascendant`.
+Generated `TextAsset` files are saved under the output path, making them usable
+for UI widgets, mission terminals, and localized data tables.
+
+### Editor Utility Widget Workflow
+
+- Location: `unreal_tools/editor_utilities/mission_brief_widget.py`
+- Base class: `MissionBriefGeneratorWidget`
+
+Create an Editor Utility Widget Blueprint that subclasses the Python widget to
+provide an in-editor UI:
+
+1. Add buttons that call `Run Generation` (mapped to `run_generation`).
+2. Use `preview_brief_for_asset` to display a formatted mission brief before
+   saving it to disk.
+3. Toggle the exposed properties (input/output/locale/overwrite) to match the
+   design team's workflow.
+
+Because the widget delegates to the Python commandlet, the designer experience
+remains Python-free while still benefiting from the shared mission data.
+
+### Cooking and Packaging Builds
+
+- Automation script: `Build/CI/cook_and_package.sh`
+- GitHub Actions workflow: `.github/workflows/unreal-build.yml`
+
+The shell script is a thin wrapper around `RunUAT BuildCookRun` that enforces a
+consistent output directory: `Saved/Builds/<Platform>/<Configuration>`. Set the
+`UE_ROOT` environment variable to the Unreal installation path before invoking
+the script.
+
+```bash
+UE_ROOT=/path/to/UnrealEngine ./Build/CI/cook_and_package.sh Win64 Shipping
+```
+
+In CI, the GitHub Actions workflow installs Unreal Engine, caches cooked
+artifacts, and uploads the packaged build as an artifact. Provide an
+organization secret called `UE_ROOT` that points to a licensed Unreal Engine
+install accessible to the runner.
 
 ## Repository Layout
 
