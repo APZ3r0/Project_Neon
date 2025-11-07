@@ -157,11 +157,14 @@ only tracked project files end up in the resulting ZIP.
 
 ### Cinematic Dismemberment Sandbox
 
-If you want to rapidly ideate on over-the-top takedowns outside of the full
-mission flow, use the standalone dismemberment system. It accepts weapon
-categories, attack vectors, and resilience values to compute how likely a limb
-is to be severed or mangled. The helper returns both the raw numbers and a
-flavor-rich description you can drop into briefs or encounter notes.
+If you want to rapidly ideate on takedowns outside of the full mission flow,
+use the standalone dismemberment system. The module now leans on lightweight
+physics rather than pure dice rolls: weapon mass, projectile velocity, attack
+vector, and armour damping combine to estimate impact impulse and peak force.
+Those values are compared against limb-specific shear thresholds to determine
+whether the result is an intact limb, critical damage, or full severance. The
+helper returns both the raw measurements and a designer-friendly description
+you can drop into briefs or encounter notes.
 
 ```python
 >>> from neon_ascendant.dismemberment import DismembermentSystem
@@ -176,9 +179,9 @@ flavor-rich description you can drop into briefs or encounter notes.
 ...     bonus_force=5,
 ... )
 >>> event.summary()
-'Severed right arm (impulse 25 vs resistance 8)'
+'Severed right arm (impulse 55.9 vs resistance 5.7)'
 >>> event.description
-'Descending Strike delivers Right Arm spins free in an arc of neon plasma and arterial spray. Momentum surges.'
+'Descending Strike hits with 55.9 N·s against 5.7 kN. Right Arm detaches amid sparking implants and coolant spray. Momentum surges forward.'
 ```
 
 ## Unreal Engine Integration
