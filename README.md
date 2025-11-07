@@ -86,6 +86,17 @@ The tests confirm that:
 - All lore data (districts, factions, weapons, implants, complications, and
   extraction conditions) are present in the native C++ sources.
 
+### Working with the Repository on Windows
+
+If you are collaborating from Windows and plan to use the GitHub CLI (`gh`) or
+other tooling that shells out to Git, make sure that [Git for Windows is
+installed](https://gitforwindows.org/) and available on your `PATH` before
+running commands such as `gh pr merge`. The GitHub CLI depends on the `git`
+executable to fetch branches and create merge commits, and will emit the error
+`unable to find git executable in PATH` if Git is missing. Installing Git for
+Windows (and restarting your terminal so the environment variables refresh)
+resolves the issue.
+
 ## License
 
 Released under the MIT License. See `LICENSE` for details.
