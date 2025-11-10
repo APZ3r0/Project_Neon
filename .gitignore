@@ -2,3 +2,36 @@ __pycache__/
 *.py[cod]
 dist/
 *.zip
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Unreal Engine
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+*.uproject
+*.uplugin
+*.sln
+*.xcodeproj
+*.xcworkspace
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# OS
+.DS_Store
+Thumbs.db

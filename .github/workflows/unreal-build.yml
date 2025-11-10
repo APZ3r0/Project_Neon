@@ -1,0 +1,50 @@
+name: Unreal Build and Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Target platform (e.g., Win64, Linux)
+        default: Win64
+        required: true
+      configuration:
+        description: Build configuration (Development or Shipping)
+        default: Development
+        required: true
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      UE_ROOT: ${{ secrets.UE_ROOT }}
+      PLATFORM: ${{ github.event.inputs.platform || 'Win64' }}
+      CONFIGURATION: ${{ github.event.inputs.configuration || 'Development' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Unreal Engine
+        uses: ale8k/setup-ue@v1
+        with:
+          ue-version: 5.3
+
+      - name: Cache Unreal build artifacts
+        uses: actions/cache@v4
+        with:
+          path: Saved/Builds
+          key: ${{ runner.os }}-${{ env.PLATFORM }}-${{ env.CONFIGURATION }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.PLATFORM }}-${{ env.CONFIGURATION }}-
+
+      - name: Cook and package
+        run: |
+          ./Build/CI/cook_and_package.sh "$PLATFORM" "$CONFIGURATION"
+
+      - name: Upload packaged build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Project_Neon-${{ env.PLATFORM }}-${{ env.CONFIGURATION }}
+          path: Saved/Builds/${{ env.PLATFORM }}/${{ env.CONFIGURATION }}
