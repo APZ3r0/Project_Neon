@@ -182,3 +182,54 @@ Project_Neon/
 If you need to locate a specific subsystem, this map shows exactly where each
 component resides inside the repository.
 
+## Unreal Engine Migration
+
+The repository includes a complete migration plan and foundation code for moving **Neon Ascendant** to Unreal Engine 5. All migration documentation, code templates, and exported data are ready to use.
+
+### Quick Start
+
+1. **Review Migration Plan**: See `UNREAL_MIGRATION_PLAN.md` for the complete 40-week strategy
+2. **Export Data**: Run `python scripts/export_to_unreal.py` to generate Unreal-compatible data files
+3. **Follow Setup Guide**: See `unreal_project_setup/GETTING_STARTED.md` for step-by-step instructions
+
+### Migration Resources
+
+- **`UNREAL_MIGRATION_PLAN.md`** - Complete migration strategy and architecture
+- **`PYTHON_TO_UNREAL_MAPPING.md`** - Direct code translations from Python to C++
+- **`QUICK_START_GUIDE.md`** - Day-by-day setup guide
+- **`START_HERE.md`** - Quick overview and getting started
+- **`unreal_project_setup/`** - Ready-to-use C++ code templates and build files
+- **`unreal_data/`** - Exported game data (CSV, JSON, C++ headers)
+- **`unreal_templates/`** - Core subsystem templates (Codex, Mission Generation)
+
+### Project Setup Steps
+
+1. **Create Unreal Project**
+   - Open Unreal Engine 5.3+
+   - Create new **C++** project (not Blueprint-only)
+   - Choose **Third Person** template
+   - Project name: `NeonAscendant`
+
+2. **Set Up Project Structure**
+   - Create folder structure in Content Browser (see `GETTING_STARTED.md`)
+   - Enable required plugins (Gameplay Ability System, PCG, Online Subsystem)
+
+3. **Create Core Module**
+   - Close Unreal Editor
+   - In Visual Studio, right-click project → **Add → New Module**
+   - Module name: `NeonAscendantCore`
+   - Click **Add**
+
+4. **Copy Foundation Files**
+   - Copy files from `unreal_project_setup/` to your Unreal project
+   - Build files → `Source/NeonAscendantCore/`
+   - Data structures → `Source/NeonAscendantCore/Public/Data/`
+   - Subsystems → `Source/NeonAscendantCore/Public/Subsystems/`
+
+5. **Import Data**
+   - Import CSV files from `unreal_data/` into Unreal Data Tables
+   - Create Data Assets from exported JSON
+   - Configure Asset Manager
+
+For detailed instructions, see `unreal_project_setup/GETTING_STARTED.md`.
+
