@@ -5,7 +5,8 @@
       "Bash(where:*)",
       "Bash(cat:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nFix CI workflow and corrupted solution file\n\n- Update CI workflow to use pyproject.toml instead of missing requirements.txt\n- Fix corrupted NeonAscendant.sln file (remove garbage data from line 1)\n- Add Claude Code local settings\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nFix CI workflow and corrupted solution file\n\n- Update CI workflow to use pyproject.toml instead of missing requirements.txt\n- Fix corrupted NeonAscendant.sln file (remove garbage data from line 1)\n- Add Claude Code local settings\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
