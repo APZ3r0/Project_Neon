@@ -19,7 +19,8 @@ test = [
 ]
 
 [tool.setuptools]
-packages = []
+package-dir = {"" = "src"}
+packages = ["neon_ascendant"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
