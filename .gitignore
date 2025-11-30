@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 dist/
 *.zip
+*.egg-info/
 
 # Visual Studio
 .vs/
