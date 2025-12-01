@@ -8,5 +8,11 @@ dist/
 .vs/
 
 # Unreal Engine
+Binaries/
+DerivedDataCache/
 Intermediate/
 Saved/
+Backup/
+Plugins/VisualStudioTools/
+UpgradeLog.htm
+
