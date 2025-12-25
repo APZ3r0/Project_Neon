@@ -66,27 +66,7 @@ void UMyMissionComponent::CreateMissions()
 }
 ```
 
-## Testing and Tooling
-
-Automated checks continue to run through `pytest`, validating that the Unreal
-project descriptor, build configuration, and data tables remain synchronized
-with the lore canon. Install the optional testing dependencies and execute the
-suite locally:
-
-```bash
-python -m pip install -e .[test]
-pytest
-```
-
-The tests confirm that:
-
-- The `.uproject` file registers the `NeonAscendant` runtime module.
-- Build rules include the expected engine dependencies.
-- Blueprint APIs remain exposed for mission generation.
-- All lore data (districts, factions, weapons, implants, complications, and
-  extraction conditions) are present in the native C++ sources.
-
-### Working with the Repository on Windows
+## Working with the Repository on Windows
 
 If you are collaborating from Windows and plan to use the GitHub CLI (`gh`) or
 other tooling that shells out to Git, make sure that [Git for Windows is

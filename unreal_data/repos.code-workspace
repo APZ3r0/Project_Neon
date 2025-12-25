@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../source/repos"
+		},
+		{
+			"name": "Project_Neon",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
