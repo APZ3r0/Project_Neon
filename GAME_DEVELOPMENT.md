@@ -82,17 +82,133 @@ You now have the core gameplay foundation implemented in C++:
 
 ### Step 2: Add Enemy AI
 
-**What you need:**
-- Create `ANeonEnemy` class (Character-based AI)
-- AI Controller with simple behavior tree
-- NavMesh for pathfinding
-- Health component
+**Architecture Overview:**
+- `ANeonGameMode` generates missions and configures enemy spawns
+- `ANeonEnemy` class (Character-based AI) represents opposition faction members
+- `ANeonEnemyController` handles pathfinding and combat behavior
+- Mission data (Opposition faction, complications) drives enemy configuration
 
-**How to implement:**
-1. Add new C++ class inheriting from `ACharacter`
-2. Implement health/damage system
-3. Create AI Controller to chase and attack player
-4. Use Unreal's Navigation Mesh for movement
+**What you need to create:**
+1. `ANeonEnemy` class - Enemy character with health/damage system
+2. `ANeonEnemyController` class - AI behavior (chase, attack, patrol)
+3. NavMesh setup in your test level
+4. Enemy spawn points coordinated by `ANeonGameMode`
+
+**Step-by-step implementation:**
+
+1. **Create `ANeonEnemy` class** (`Source/NeonAscendant/Public/NeonEnemy.h`)
+   ```cpp
+   #pragma once
+   #include "CoreMinimal.h"
+   #include "GameFramework/Character.h"
+   #include "NeonEnemy.generated.h"
+   
+   UCLASS()
+   class NEONASCENDANT_API ANeonEnemy : public ACharacter
+   {
+       GENERATED_BODY()
+   
+   public:
+       ANeonEnemy();
+       virtual void BeginPlay() override;
+       virtual void Tick(float DeltaTime) override;
+   
+       // Health system
+       UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+       float MaxHealth = 100.0f;
+       
+       UPROPERTY(BlueprintReadOnly, Category = "Health")
+       float CurrentHealth = 100.0f;
+       
+       UFUNCTION(BlueprintCallable, Category = "Health")
+       void TakeDamage(float Damage);
+       
+       void Die();
+   
+   protected:
+       UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+       float DetectionRange = 2000.0f;
+       
+       UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+       float AttackRange = 500.0f;
+   };
+   ```
+
+2. **Create `ANeonEnemyController` class** (`Source/NeonAscendant/Public/NeonEnemyController.h`)
+   ```cpp
+   #pragma once
+   #include "CoreMinimal.h"
+   #include "AIController.h"
+   #include "NeonEnemyController.generated.h"
+   
+   class ANeonEnemy;
+   class ANeonCharacter;
+   
+   UCLASS()
+   class NEONASCENDANT_API ANeonEnemyController : public AAIController
+   {
+       GENERATED_BODY()
+   
+   public:
+       ANeonEnemyController();
+       virtual void BeginPlay() override;
+       virtual void Tick(float DeltaTime) override;
+   
+   protected:
+       UPROPERTY(BlueprintReadOnly, Category = "AI")
+       ANeonEnemy* EnemyCharacter = nullptr;
+       
+       UPROPERTY(BlueprintReadOnly, Category = "AI")
+       ANeonCharacter* PlayerCharacter = nullptr;
+       
+       void UpdateTargetingAndMovement();
+       bool CanSeeTarget() const;
+   };
+   ```
+
+3. **Update `ANeonGameMode`** to spawn enemies from mission data:
+   ```cpp
+   // In NeonGameMode.h, add:
+   UFUNCTION(BlueprintCallable, Category = "Mission")
+   void SpawnEnemiesForMission(const FMissionBrief& Mission, int32 EnemyCount = 3);
+   
+   // In NeonGameMode.cpp, add:
+   void ANeonGameMode::SpawnEnemiesForMission(const FMissionBrief& Mission, int32 EnemyCount)
+   {
+       // Spawn enemies based on Opposition faction
+       // Position them strategically in the level
+       // Configure their difficulty based on mission
+   }
+   
+   // Call from StartNewMission:
+   void ANeonGameMode::StartNewMission()
+   {
+       if (MissionGenerator)
+       {
+           FMissionBrief NewMission = MissionGenerator->GenerateMissionBrief();
+           // ... log mission ...
+           SpawnEnemiesForMission(NewMission);
+       }
+   }
+   ```
+
+4. **Set up NavMesh in your test level:**
+   - Open `TestLevel`
+   - Place a NavMesh Bounds Volume
+   - Make sure it covers all areas where enemies should patrol
+   - Click "Build" → "Build Paths" to generate navigation mesh
+
+5. **Create Enemy Blueprint:**
+   - Content Browser → Blueprint Class → `ANeonEnemy`
+   - Name it `BP_NeonEnemy`
+   - Set AI Controller Class: `ANeonEnemyController`
+   - Assign a skeletal mesh (use placeholder capsule for now)
+   - Set collision and physics properties
+
+6. **Test spawning:**
+   - In BP_NeonGameMode, set a breakpoint or log message in `SpawnEnemiesForMission()`
+   - Play the level and verify enemies spawn
+   - Test that they detect and chase the player
 
 ### Step 3: Build Your First District
 
