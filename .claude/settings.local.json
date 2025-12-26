@@ -9,7 +9,6 @@
       "Bash(rm:*)",
       "Bash(git commit:*)",
       "Bash(git push)",
-      "mcp__ide__getDiagnostics",
       "Bash(pytest:*)",
       "Bash(pip install:*)",
       "Bash(gh run list:*)",
