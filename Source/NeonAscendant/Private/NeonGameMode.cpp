@@ -1,5 +1,6 @@
 #include "NeonGameMode.h"
 #include "NeonCharacter.h"
+#include "NeonHUD.h"
 #include "MissionGenerator.h"
 #include "MissionTypes.h"
 #include "Kismet/GameplayStatics.h"
@@ -9,6 +10,9 @@ ANeonGameMode::ANeonGameMode()
 {
 	// Set default pawn class to our character
 	DefaultPawnClass = ANeonCharacter::StaticClass();
+
+	// Set default HUD class
+	HUDClass = ANeonHUD::StaticClass();
 }
 
 void ANeonGameMode::BeginPlay()
@@ -41,6 +45,22 @@ void ANeonGameMode::StartNewMission()
 
 		// Spawn enemies based on the generated mission
 		SpawnEnemiesForMission(NewMission);
+
+		// Spawn district hazards
+		SpawnHazardsForMission(NewMission);
+
+		// Update HUD with mission briefing
+		ANeonHUD* GameHUD = Cast<ANeonHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+		if (GameHUD)
+		{
+			GameHUD->SetMissionBrief(NewMission);
+
+			APawn* PlayerPawn = GetWorld()->GetFirstPlayerController()->GetPawn();
+			if (ANeonCharacter* PlayerCharacter = Cast<ANeonCharacter>(PlayerPawn))
+			{
+				GameHUD->SetPlayerCharacter(PlayerCharacter);
+			}
+		}
 	}
 }
 
@@ -85,6 +105,67 @@ void ANeonGameMode::SpawnEnemiesForMission(const FMissionBrief& Mission, int32 E
 		if (NewEnemy)
 		{
 			UE_LOG(LogTemp, Log, TEXT("Spawned enemy %d at location (%.0f, %.0f, %.0f)"), 
+				i + 1, SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
+		}
+	}
+}
+
+void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
+{
+	// Validate hazard class is set
+	if (!HazardClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ANeonGameMode::SpawnHazardsForMission - HazardClass not set! Assign ADistrictHazard class in Blueprint."));
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	// Clear previous hazards
+	for (ADistrictHazard* Hazard : ActiveHazards)
+	{
+		if (Hazard)
+		{
+			Hazard->Destroy();
+		}
+	}
+	ActiveHazards.Empty();
+
+	// Spawn hazards based on the mission's complication (which relates to district)
+	// For now, spawn 2-3 hazards in the level
+	int32 HazardCount = FMath::RandRange(2, 3);
+
+	UE_LOG(LogTemp, Log, TEXT("Spawning %d hazards for district %s"), HazardCount, *Mission.District.Name);
+
+	for (int32 i = 0; i < HazardCount; ++i)
+	{
+		// Calculate spawn position: random location around the level
+		FVector SpawnLocation = FVector(
+			FMath::RandRange(-3000.0f, 3000.0f),
+			FMath::RandRange(-3000.0f, 3000.0f),
+			100.0f
+		);
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+
+		// Spawn the hazard
+		ADistrictHazard* NewHazard = World->SpawnActor<ADistrictHazard>(HazardClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
+		if (NewHazard)
+		{
+			// Randomize hazard type
+			int32 HazardTypeIndex = FMath::RandRange(0, 4);
+			NewHazard->HazardType = static_cast<EHazardType>(HazardTypeIndex);
+			NewHazard->DamagePerSecond = FMath::RandRange(5.0f, 15.0f);
+			NewHazard->EffectRadius = FMath::RandRange(300.0f, 600.0f);
+
+			ActiveHazards.Add(NewHazard);
+
+			UE_LOG(LogTemp, Log, TEXT("Spawned hazard %d at location (%.0f, %.0f, %.0f)"), 
 				i + 1, SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
 		}
 	}

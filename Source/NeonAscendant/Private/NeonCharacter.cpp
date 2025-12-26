@@ -217,3 +217,51 @@ void ANeonCharacter::UpdateCameraMode()
 		GetMesh()->SetOwnerNoSee(false);
 	}
 }
+void ANeonCharacter::TakeDamage(float Damage)
+{
+	if (Damage <= 0.0f)
+	{
+		return;
+	}
+
+	CurrentHealth -= Damage;
+	UE_LOG(LogTemp, Log, TEXT("Player took %.0f damage. Health: %.0f/%.0f"),
+		Damage, CurrentHealth, MaxHealth);
+
+	if (CurrentHealth <= 0.0f)
+	{
+		Die();
+	}
+}
+
+void ANeonCharacter::Die()
+{
+	UE_LOG(LogTemp, Log, TEXT("Player died!"));
+
+	// Disable input
+	if (Controller)
+	{
+		Controller->UnPossess();
+	}
+
+	// Stop firing and movement
+	StopFire();
+	GetCharacterMovement()->DisableMovement();
+
+	// Drop weapon
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->Destroy();
+		CurrentWeapon = nullptr;
+	}
+
+	// Ragdoll
+	if (GetMesh())
+	{
+		GetMesh()->SetSimulatePhysics(true);
+		GetMesh()->SetCollisionEnabled(ECC_PhysicsBody);
+	}
+
+	// Destroy after delay
+	SetLifeSpan(10.0f);
+}

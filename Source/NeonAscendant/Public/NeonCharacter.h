@@ -42,6 +42,27 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void EquipWeapon(TSubclassOf<ANeonWeapon> WeaponClass);
 
+	// Health system
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	float MaxHealth = 100.0f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Health")
+	float CurrentHealth = 100.0f;
+
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	void TakeDamage(float Damage);
+
+	UFUNCTION(BlueprintPure, Category = "Health")
+	float GetHealth() const { return CurrentHealth; }
+
+	UFUNCTION(BlueprintPure, Category = "Health")
+	float GetMaxHealth() const { return MaxHealth; }
+
+	UFUNCTION(BlueprintPure, Category = "Health")
+	float GetHealthPercent() const { return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f; }
+
+	void Die();
+
 	// Camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FirstPersonCamera;

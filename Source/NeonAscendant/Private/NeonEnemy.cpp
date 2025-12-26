@@ -1,5 +1,7 @@
 #include "NeonEnemy.h"
 #include "NeonCharacter.h"
+#include "NeonWeapon.h"
+#include "NeonEnemyController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -17,6 +19,10 @@ ANeonEnemy::ANeonEnemy()
 
 	// Initialize health
 	CurrentHealth = MaxHealth;
+
+	// Use AI controller
+	AIControllerClass = ANeonEnemyController::StaticClass();
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 void ANeonEnemy::BeginPlay()
@@ -35,6 +41,9 @@ void ANeonEnemy::BeginPlay()
 		UE_LOG(LogTemp, Log, TEXT("ANeonEnemy spawned and detected player at %.0f units"), 
 			FVector::Dist(GetActorLocation(), TargetPlayer->GetActorLocation()));
 	}
+
+	// Equip weapon
+	EquipWeapon();
 }
 
 void ANeonEnemy::Tick(float DeltaTime)
@@ -46,28 +55,17 @@ void ANeonEnemy::Tick(float DeltaTime)
 		return;
 	}
 
-	// Simple AI: check distance to player
+	// Simple proximity-based firing for now
+	// The AI controller will handle movement
 	float DistanceToPlayer = FVector::Dist(GetActorLocation(), TargetPlayer->GetActorLocation());
-
-	// If player is in detection range, move toward them
-	if (DistanceToPlayer < DetectionRange)
+	if (DistanceToPlayer < AttackRange && GetWorld()->GetTimeSeconds() - LastFireTime > FireInterval)
 	{
+		// Face the player
 		FVector DirectionToPlayer = (TargetPlayer->GetActorLocation() - GetActorLocation()).GetSafeNormal();
-		GetCharacterMovement()->MaxWalkSpeed = 600.0f;
-		AddMovementInput(DirectionToPlayer, 1.0f);
+		FRotator LookRotation = DirectionToPlayer.Rotation();
+		SetActorRotation(FRotator(0.0f, LookRotation.Yaw, 0.0f));
 
-		// Log periodically for debugging
-		static double LastLogTime = 0.0;
-		if (GetWorld()->GetTimeSeconds() - LastLogTime > 2.0)
-		{
-			UE_LOG(LogTemp, Log, TEXT("ANeonEnemy chasing player at distance %.0f"), DistanceToPlayer);
-			LastLogTime = GetWorld()->GetTimeSeconds();
-		}
-	}
-	else
-	{
-		// Patrol or idle
-		GetCharacterMovement()->MaxWalkSpeed = 0.0f;
+		FireWeapon();
 	}
 }
 
@@ -81,6 +79,13 @@ void ANeonEnemy::TakeDamage(float Damage)
 	CurrentHealth -= Damage;
 	UE_LOG(LogTemp, Log, TEXT("ANeonEnemy took %.0f damage. Health: %.0f/%.0f"), 
 		Damage, CurrentHealth, MaxHealth);
+
+	// Notify AI controller of damage
+	ANeonEnemyController* EnemyController = GetEnemyController();
+	if (EnemyController && TargetPlayer)
+	{
+		EnemyController->OnEnemyDamaged(TargetPlayer->GetActorLocation());
+	}
 
 	if (CurrentHealth <= 0.0f)
 	{
@@ -100,15 +105,74 @@ void ANeonEnemy::Die()
 
 	UE_LOG(LogTemp, Log, TEXT("ANeonEnemy died"));
 
+	// Drop weapon
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Destroy();
+		EquippedWeapon = nullptr;
+	}
+
 	// Disable movement and collision
 	GetCharacterMovement()->DisableMovement();
 	GetCapsuleComponent()->SetCollisionEnabled(ECC_Pawn);
 
 	// Simple death: ragdoll (enable physics)
-	GetMesh()->SetSimulatePhysics(true);
+	if (GetMesh())
+	{
+		GetMesh()->SetSimulatePhysics(true);
+	}
 
 	// Destroy after a delay
 	SetLifeSpan(10.0f);
+}
+
+void ANeonEnemy::EquipWeapon()
+{
+	if (!WeaponClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ANeonEnemy::EquipWeapon - WeaponClass not set!"));
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = this;
+
+	EquippedWeapon = GetWorld()->SpawnActor<ANeonWeapon>(WeaponClass, SpawnParams);
+
+	if (EquippedWeapon)
+	{
+		// Attach to hand socket
+		EquippedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("WeaponSocket"));
+		UE_LOG(LogTemp, Log, TEXT("ANeonEnemy equipped weapon: %s"), *EquippedWeapon->GetName());
+	}
+}
+
+void ANeonEnemy::FireWeapon()
+{
+	if (!EquippedWeapon || !TargetPlayer)
+	{
+		return;
+	}
+
+	LastFireTime = GetWorld()->GetTimeSeconds();
+
+	// Get aim direction toward player
+	FVector AimStart = GetActorLocation() + FVector(0.0f, 0.0f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 0.7f);
+	FVector AimEnd = TargetPlayer->GetActorLocation() + FVector(0.0f, 0.0f, 50.0f);
+	FVector AimDirection = (AimEnd - AimStart).GetSafeNormal();
+
+	// Add some inaccuracy (enemies aren't perfect shots)
+	FVector InaccurateAim = AimDirection;
+	InaccurateAim += FMath::VRand() * 0.2f; // 20% inaccuracy
+	InaccurateAim = InaccurateAim.GetSafeNormal();
+
+	EquippedWeapon->Fire(AimStart, InaccurateAim);
+}
+
+ANeonEnemyController* ANeonEnemy::GetEnemyController() const
+{
+	return Cast<ANeonEnemyController>(Controller);
 }
 
 void ANeonEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

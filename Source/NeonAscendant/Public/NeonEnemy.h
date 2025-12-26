@@ -5,6 +5,8 @@
 #include "NeonEnemy.generated.h"
 
 class ANeonCharacter;
+class ANeonWeapon;
+class ANeonEnemyController;
 
 UCLASS()
 class NEONASCENDANT_API ANeonEnemy : public ACharacter
@@ -29,6 +31,16 @@ public:
 
 	void Die();
 
+	// Weapon system
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	TSubclassOf<ANeonWeapon> WeaponClass;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	TObjectPtr<ANeonWeapon> EquippedWeapon = nullptr;
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void FireWeapon();
+
 	// Targeting and detection
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
 	float DetectionRange = 2000.0f;
@@ -39,9 +51,21 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	ANeonCharacter* TargetPlayer = nullptr;
 
+	// Get AI controller
+	UFUNCTION(BlueprintPure, Category = "AI")
+	ANeonEnemyController* GetEnemyController() const;
+
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	void EquipWeapon();
 
 	UPROPERTY(BlueprintReadOnly, Category = "AI")
 	bool bIsDead = false;
+
+	// Combat state
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	double LastFireTime = 0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float FireInterval = 0.15f; // Time between shots
 };

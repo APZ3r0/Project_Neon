@@ -6,6 +6,8 @@
 
 class UMissionGenerator;
 class ANeonEnemy;
+class ADistrictHazard;
+struct FMissionBrief;
 
 UCLASS()
 class NEONASCENDANT_API ANeonGameMode : public AGameModeBase
@@ -27,6 +29,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Mission")
 	void SpawnEnemiesForMission(const FMissionBrief& Mission, int32 EnemyCount = 3);
 
+	// Spawn district hazards based on mission data
+	UFUNCTION(BlueprintCallable, Category = "Mission")
+	void SpawnHazardsForMission(const FMissionBrief& Mission);
+
 	UFUNCTION(BlueprintPure, Category = "Mission")
 	UMissionGenerator* GetMissionGenerator() const { return MissionGenerator; }
 
@@ -38,7 +44,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Mission")
 	TSubclassOf<class ANeonEnemy> EnemyClass;
 
+	// Blueprint-assignable hazard class for spawning
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Mission")
+	TSubclassOf<class ADistrictHazard> HazardClass;
+
 	// Spawn points for enemies (placed in level)
 	UPROPERTY(BlueprintReadOnly, Category = "Mission")
 	TArray<FVector> CachedSpawnPoints;
+
+	// Spawned hazards tracking
+	UPROPERTY(BlueprintReadOnly, Category = "Mission")
+	TArray<TObjectPtr<ADistrictHazard>> ActiveHazards;
 };
