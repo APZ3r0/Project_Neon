@@ -13,7 +13,8 @@ public class NeonAscendant : ModuleRules
             "Engine",
             "GameplayTags",
             "InputCore",
-            "EnhancedInput"
+            "EnhancedInput",
+            "AIModule"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[]

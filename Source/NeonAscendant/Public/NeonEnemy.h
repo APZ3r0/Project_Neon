@@ -26,8 +26,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
 	float CurrentHealth = 100.0f;
 
-	UFUNCTION(BlueprintCallable, Category = "Health")
-	void TakeDamage(float Damage);
+	virtual float TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	void Die();
 
@@ -55,12 +54,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "AI")
 	ANeonEnemyController* GetEnemyController() const;
 
+	UPROPERTY(BlueprintReadOnly, Category = "AI")
+	bool bIsDead = false;
+
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	void EquipWeapon();
-
-	UPROPERTY(BlueprintReadOnly, Category = "AI")
-	bool bIsDead = false;
 
 	// Combat state
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")

@@ -41,8 +41,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	bool IsReloading() const { return bIsReloading; }
 
-protected:
 	void Fire();
+
+protected:
 	void FinishReload();
 
 	// Components

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
+#include "Engine/Canvas.h"
 #include "MissionTypes.h"
 #include "NeonHUD.generated.h"
 

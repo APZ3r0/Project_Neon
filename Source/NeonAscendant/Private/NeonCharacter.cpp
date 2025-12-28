@@ -217,21 +217,25 @@ void ANeonCharacter::UpdateCameraMode()
 		GetMesh()->SetOwnerNoSee(false);
 	}
 }
-void ANeonCharacter::TakeDamage(float Damage)
+float ANeonCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (Damage <= 0.0f)
+	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+
+	if (ActualDamage <= 0.0f)
 	{
-		return;
+		return ActualDamage;
 	}
 
-	CurrentHealth -= Damage;
+	CurrentHealth -= ActualDamage;
 	UE_LOG(LogTemp, Log, TEXT("Player took %.0f damage. Health: %.0f/%.0f"),
-		Damage, CurrentHealth, MaxHealth);
+		ActualDamage, CurrentHealth, MaxHealth);
 
 	if (CurrentHealth <= 0.0f)
 	{
 		Die();
 	}
+
+	return ActualDamage;
 }
 
 void ANeonCharacter::Die()
@@ -259,7 +263,7 @@ void ANeonCharacter::Die()
 	if (GetMesh())
 	{
 		GetMesh()->SetSimulatePhysics(true);
-		GetMesh()->SetCollisionEnabled(ECC_PhysicsBody);
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	}
 
 	// Destroy after delay

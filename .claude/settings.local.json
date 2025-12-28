@@ -14,7 +14,15 @@
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
       "Bash(gh run watch:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(ls:*)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\18\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\amd64\\\\MSBuild.exe\" NeonAscendant.sln /t:Build /p:Configuration=\"Development Editor\" /p:Platform=Win64 /m /v:minimal)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\18\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\amd64\\\\MSBuild.exe\" NeonAscendant.sln /t:Build /p:Configuration=Development_Editor /p:Platform=Win64 /m /v:minimal)",
+      "Bash(reg query \"HKEY_CURRENT_USER\\\\Software\\\\Epic Games\\\\Unreal Engine\\\\Builds\")",
+      "Bash(reg query \"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\EpicGames\\\\Unreal Engine\")",
+      "Bash(reg query \"HKEY_LOCAL_MACHINE\\\\SOFTWARE\\\\EpicGames\\\\Unreal Engine\\\\5.7\" /v InstalledDirectory)",
+      "Bash(\"C:\\\\Program Files\\\\Epic Games\\\\UE_5.7\\\\Engine\\\\Build\\\\BatchFiles\\\\Build.bat\" NeonAscendantEditor Win64 Development -Project=\"C:\\\\Users\\\\apijo\\\\Project_Neon\\\\NeonAscendant.uproject\" -WaitMutex -FromMsBuild)",
+      "Bash(\"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\amd64\\\\MSBuild.exe\" NeonAscendant.sln /t:Build /p:Configuration=Development_Editor /p:Platform=Win64 /m /v:minimal)"
     ],
     "deny": [],
     "ask": []

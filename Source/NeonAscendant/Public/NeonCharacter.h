@@ -49,8 +49,8 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
 	float CurrentHealth = 100.0f;
 
-	UFUNCTION(BlueprintCallable, Category = "Health")
-	void TakeDamage(float Damage);
+public:
+	virtual float TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	UFUNCTION(BlueprintPure, Category = "Health")
 	float GetHealth() const { return CurrentHealth; }
@@ -61,6 +61,7 @@ protected:
 	UFUNCTION(BlueprintPure, Category = "Health")
 	float GetHealthPercent() const { return MaxHealth > 0.0f ? CurrentHealth / MaxHealth : 0.0f; }
 
+protected:
 	void Die();
 
 	// Camera
@@ -86,6 +87,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsSprinting = false;
 
+public:
 	// Weapon
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TSubclassOf<ANeonWeapon> StartingWeaponClass;

@@ -3,6 +3,7 @@
 #include "NeonWeapon.h"
 #include "NeonEnemyController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 ANeonEnemy::ANeonEnemy()
@@ -69,16 +70,18 @@ void ANeonEnemy::Tick(float DeltaTime)
 	}
 }
 
-void ANeonEnemy::TakeDamage(float Damage)
+float ANeonEnemy::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (Damage <= 0.0f)
+	const float ActualDamage = Super::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+
+	if (ActualDamage <= 0.0f)
 	{
-		return;
+		return ActualDamage;
 	}
 
-	CurrentHealth -= Damage;
-	UE_LOG(LogTemp, Log, TEXT("ANeonEnemy took %.0f damage. Health: %.0f/%.0f"), 
-		Damage, CurrentHealth, MaxHealth);
+	CurrentHealth -= ActualDamage;
+	UE_LOG(LogTemp, Log, TEXT("ANeonEnemy took %.0f damage. Health: %.0f/%.0f"),
+		ActualDamage, CurrentHealth, MaxHealth);
 
 	// Notify AI controller of damage
 	ANeonEnemyController* EnemyController = GetEnemyController();
@@ -91,6 +94,8 @@ void ANeonEnemy::TakeDamage(float Damage)
 	{
 		Die();
 	}
+
+	return ActualDamage;
 }
 
 void ANeonEnemy::Die()
@@ -114,7 +119,7 @@ void ANeonEnemy::Die()
 
 	// Disable movement and collision
 	GetCharacterMovement()->DisableMovement();
-	GetCapsuleComponent()->SetCollisionEnabled(ECC_Pawn);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// Simple death: ragdoll (enable physics)
 	if (GetMesh())
@@ -158,16 +163,9 @@ void ANeonEnemy::FireWeapon()
 	LastFireTime = GetWorld()->GetTimeSeconds();
 
 	// Get aim direction toward player
-	FVector AimStart = GetActorLocation() + FVector(0.0f, 0.0f, GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 0.7f);
-	FVector AimEnd = TargetPlayer->GetActorLocation() + FVector(0.0f, 0.0f, 50.0f);
-	FVector AimDirection = (AimEnd - AimStart).GetSafeNormal();
-
-	// Add some inaccuracy (enemies aren't perfect shots)
-	FVector InaccurateAim = AimDirection;
-	InaccurateAim += FMath::VRand() * 0.2f; // 20% inaccuracy
-	InaccurateAim = InaccurateAim.GetSafeNormal();
-
-	EquippedWeapon->Fire(AimStart, InaccurateAim);
+	// TODO: Implement custom aim parameters for enemies
+	// For now, use the weapon's default fire behavior
+	EquippedWeapon->Fire();
 }
 
 ANeonEnemyController* ANeonEnemy::GetEnemyController() const

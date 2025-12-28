@@ -3,6 +3,8 @@
 #include "NeonHUD.h"
 #include "MissionGenerator.h"
 #include "MissionTypes.h"
+#include "DistrictHazard.h"
+#include "NeonEnemy.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 

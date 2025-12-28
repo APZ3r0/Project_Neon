@@ -4,6 +4,7 @@
 #include "Components/SphereComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/DamageEvents.h"
 
 ADistrictHazard::ADistrictHazard()
 {
@@ -14,7 +15,7 @@ ADistrictHazard::ADistrictHazard()
 	HazardVolume = CreateDefaultSubobject<USphereComponent>(TEXT("HazardVolume"));
 	RootComponent = HazardVolume;
 	HazardVolume->SetSphereRadius(EffectRadius);
-	HazardVolume->SetCollisionEnabled(ECC_WorldDynamic);
+	HazardVolume->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	HazardVolume->SetCollisionObjectType(ECC_WorldDynamic);
 	HazardVolume->SetCollisionResponseToAllChannels(ECR_Overlap);
 
@@ -151,7 +152,8 @@ void ADistrictHazard::ApplyHazardDamage(AActor* HitActor)
 	// Apply damage to player
 	if (ANeonCharacter* PlayerCharacter = Cast<ANeonCharacter>(HitActor))
 	{
-		PlayerCharacter->TakeDamage(Damage);
+		FDamageEvent DamageEvent;
+		PlayerCharacter->TakeDamage(Damage, DamageEvent, nullptr, this);
 		UE_LOG(LogTemp, Log, TEXT("%s hazard dealt %.0f damage to player. Health: %.0f/%.0f"),
 			*GetHazardTypeName(),
 			Damage,
@@ -162,7 +164,8 @@ void ADistrictHazard::ApplyHazardDamage(AActor* HitActor)
 	// Apply damage to enemy
 	if (ANeonEnemy* Enemy = Cast<ANeonEnemy>(HitActor))
 	{
-		Enemy->TakeDamage(Damage);
+		FDamageEvent DamageEvent;
+		Enemy->TakeDamage(Damage, DamageEvent, nullptr, this);
 		UE_LOG(LogTemp, Log, TEXT("%s hazard dealt %.0f damage to enemy. Health: %.0f/%.0f"),
 			*GetHazardTypeName(),
 			Damage,

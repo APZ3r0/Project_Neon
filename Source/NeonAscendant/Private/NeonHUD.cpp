@@ -2,6 +2,8 @@
 #include "NeonCharacter.h"
 #include "NeonWeapon.h"
 #include "Engine/Canvas.h"
+#include "EngineUtils.h"
+#include "CanvasItem.h"
 
 ANeonHUD::ANeonHUD()
 {
@@ -37,12 +39,12 @@ void ANeonHUD::DrawHUD()
 	// Draw all HUD elements
 	DrawHealthBar();
 	DrawAmmoCounter();
-	
+
 	if (bShowMissionBriefing)
 	{
 		DrawMissionBriefing();
 	}
-	
+
 	DrawObjectiveTracker();
 	DrawExtractionIndicator();
 }
@@ -88,13 +90,9 @@ void ANeonHUD::DrawHealthBar()
 	FString HealthText = FString::Printf(TEXT("Health: %.0f / %.0f"),
 		PlayerCharacter->GetHealth(),
 		PlayerCharacter->GetMaxHealth());
-	
-	Canvas->DrawText(
-		GEngine->GetSmallFont(),
-		HealthText,
-		BarPosition.X + BarSize.X + 10.0f,
-		BarPosition.Y,
-		TextColor);
+
+	FCanvasTextItem TextItem(FVector2D(BarPosition.X + BarSize.X + 10.0f, BarPosition.Y), FText::FromString(HealthText), GEngine->GetSmallFont(), FLinearColor(TextColor));
+	Canvas->DrawItem(TextItem);
 }
 
 void ANeonHUD::DrawAmmoCounter()
@@ -111,12 +109,8 @@ void ANeonHUD::DrawAmmoCounter()
 		Weapon->GetCurrentAmmo(),
 		Weapon->GetMaxAmmo());
 
-	Canvas->DrawText(
-		GEngine->GetSmallFont(),
-		AmmoText,
-		Position.X,
-		Position.Y,
-		TextColor);
+	FCanvasTextItem TextItem(Position, FText::FromString(AmmoText), GEngine->GetSmallFont(), FLinearColor(TextColor));
+	Canvas->DrawItem(TextItem);
 }
 
 void ANeonHUD::DrawMissionBriefing()
@@ -126,38 +120,40 @@ void ANeonHUD::DrawMissionBriefing()
 	FColor BriefingColor = FColor(0, 200, 255); // Cyan
 
 	// Title
-	Canvas->DrawText(
-		GEngine->GetSmallFont(),
-		TEXT("=== MISSION BRIEFING ==="),
-		Position.X,
-		Position.Y,
-		BriefingColor);
+	FCanvasTextItem TitleItem(Position, FText::FromString(TEXT("=== MISSION BRIEFING ===")), GEngine->GetSmallFont(), FLinearColor(BriefingColor));
+	Canvas->DrawItem(TitleItem);
 
 	Position.Y += LineHeight + 10.0f;
 
 	// Mission details
 	FString DistrictText = FString::Printf(TEXT("District: %s"), *CurrentMission.District.Name);
-	Canvas->DrawText(GEngine->GetSmallFont(), DistrictText, Position.X, Position.Y, TextColor);
+	FCanvasTextItem DistrictItem(Position, FText::FromString(DistrictText), GEngine->GetSmallFont(), FLinearColor(TextColor));
+	Canvas->DrawItem(DistrictItem);
 	Position.Y += LineHeight;
 
 	FString OppositionText = FString::Printf(TEXT("Opposition: %s"), *CurrentMission.Opposition.Name);
-	Canvas->DrawText(GEngine->GetSmallFont(), OppositionText, Position.X, Position.Y, TextColor);
+	FCanvasTextItem OppositionItem(Position, FText::FromString(OppositionText), GEngine->GetSmallFont(), FLinearColor(TextColor));
+	Canvas->DrawItem(OppositionItem);
 	Position.Y += LineHeight;
 
 	FString ArchetypeText = FString::Printf(TEXT("Archetype: %s"), *CurrentMission.Archetype.Name);
-	Canvas->DrawText(GEngine->GetSmallFont(), ArchetypeText, Position.X, Position.Y, TextColor);
+	FCanvasTextItem ArchetypeItem(Position, FText::FromString(ArchetypeText), GEngine->GetSmallFont(), FLinearColor(TextColor));
+	Canvas->DrawItem(ArchetypeItem);
 	Position.Y += LineHeight;
 
 	FString WeaponText = FString::Printf(TEXT("Primary Weapon: %s"), *CurrentMission.PrimaryWeapon.Name);
-	Canvas->DrawText(GEngine->GetSmallFont(), WeaponText, Position.X, Position.Y, TextColor);
+	FCanvasTextItem WeaponItem(Position, FText::FromString(WeaponText), GEngine->GetSmallFont(), FLinearColor(TextColor));
+	Canvas->DrawItem(WeaponItem);
 	Position.Y += LineHeight;
 
 	FString ComplicationText = FString::Printf(TEXT("Complication: %s"), *CurrentMission.Complication);
-	Canvas->DrawText(GEngine->GetSmallFont(), ComplicationText, Position.X, Position.Y, TextColor);
+	FCanvasTextItem ComplicationItem(Position, FText::FromString(ComplicationText), GEngine->GetSmallFont(), FLinearColor(TextColor));
+	Canvas->DrawItem(ComplicationItem);
 	Position.Y += LineHeight;
 
 	FString ExtractionText = FString::Printf(TEXT("Extraction: %s"), *CurrentMission.ExtractionCondition);
-	Canvas->DrawText(GEngine->GetSmallFont(), ExtractionText, Position.X, Position.Y, TextColor);
+	FCanvasTextItem ExtractionItem(Position, FText::FromString(ExtractionText), GEngine->GetSmallFont(), FLinearColor(TextColor));
+	Canvas->DrawItem(ExtractionItem);
 }
 
 void ANeonHUD::DrawObjectiveTracker()
@@ -165,22 +161,20 @@ void ANeonHUD::DrawObjectiveTracker()
 	FVector2D Position = ObjectiveTrackerPosition;
 	FColor ObjectiveColor = FColor::Yellow;
 
-	Canvas->DrawText(
-		GEngine->GetSmallFont(),
-		TEXT("=== OBJECTIVE ==="),
-		Position.X,
-		Position.Y,
-		ObjectiveColor);
+	FCanvasTextItem TitleItem(Position, FText::FromString(TEXT("=== OBJECTIVE ===")), GEngine->GetSmallFont(), FLinearColor(ObjectiveColor));
+	Canvas->DrawItem(TitleItem);
 
 	Position.Y += 20.0f;
 
 	FString ObjectiveText = FString::Printf(TEXT("Complication: %s"), *CurrentMission.Complication);
-	Canvas->DrawText(GEngine->GetSmallFont(), ObjectiveText, Position.X, Position.Y, TextColor);
+	FCanvasTextItem ObjectiveItem(Position, FText::FromString(ObjectiveText), GEngine->GetSmallFont(), FLinearColor(TextColor));
+	Canvas->DrawItem(ObjectiveItem);
 
 	Position.Y += 20.0f;
 
 	FString ExtractionText = FString::Printf(TEXT("Extract via: %s"), *CurrentMission.ExtractionCondition);
-	Canvas->DrawText(GEngine->GetSmallFont(), ExtractionText, Position.X, Position.Y, TextColor);
+	FCanvasTextItem ExtractionItem(Position, FText::FromString(ExtractionText), GEngine->GetSmallFont(), FLinearColor(TextColor));
+	Canvas->DrawItem(ExtractionItem);
 }
 
 void ANeonHUD::DrawExtractionIndicator()
@@ -193,7 +187,8 @@ void ANeonHUD::DrawExtractionIndicator()
 	Canvas->TextSize(GEngine->GetSmallFont(), ExtractionStatus, TextSize.X, TextSize.Y);
 
 	FVector2D Position = FVector2D(Canvas->SizeX - TextSize.X - 20.0f, 20.0f);
-	Canvas->DrawText(GEngine->GetSmallFont(), ExtractionStatus, Position.X, Position.Y, ExtractionColor);
+	FCanvasTextItem TextItem(Position, FText::FromString(ExtractionStatus), GEngine->GetSmallFont(), FLinearColor(ExtractionColor));
+	Canvas->DrawItem(TextItem);
 }
 
 FColor ANeonHUD::GetHealthColor() const
@@ -221,7 +216,7 @@ FColor ANeonHUD::GetHealthColor() const
 
 void ANeonHUD::DrawFilledRect(FVector2D Position, FVector2D Size, FColor Color)
 {
-	FCanvasTileItem TileItem(Position, FVector2D(1, 1), Color);
+	FCanvasTileItem TileItem(Position, FVector2D(1, 1), FLinearColor(Color));
 	TileItem.Size = Size;
 	Canvas->DrawItem(TileItem);
 }
@@ -232,16 +227,29 @@ void ANeonHUD::DrawBorderedRect(FVector2D Position, FVector2D Size, FColor Borde
 	DrawFilledRect(Position, Size, FillColor);
 
 	// Draw border lines
-	FCanvasLineItem LineItem;
-	LineItem.SetColor(BorderColor);
-	LineItem.LineThickness = 2.0f;
+	FLinearColor LineColor = FLinearColor(BorderColor);
 
 	// Top
-	Canvas->DrawItem(FCanvasLineItem(Position, Position + FVector2D(Size.X, 0), BorderColor));
+	FCanvasLineItem TopLine(Position, Position + FVector2D(Size.X, 0));
+	TopLine.SetColor(LineColor);
+	TopLine.LineThickness = 2.0f;
+	Canvas->DrawItem(TopLine);
+
 	// Bottom
-	Canvas->DrawItem(FCanvasLineItem(Position + FVector2D(0, Size.Y), Position + Size, BorderColor));
+	FCanvasLineItem BottomLine(Position + FVector2D(0, Size.Y), Position + Size);
+	BottomLine.SetColor(LineColor);
+	BottomLine.LineThickness = 2.0f;
+	Canvas->DrawItem(BottomLine);
+
 	// Left
-	Canvas->DrawItem(FCanvasLineItem(Position, Position + FVector2D(0, Size.Y), BorderColor));
+	FCanvasLineItem LeftLine(Position, Position + FVector2D(0, Size.Y));
+	LeftLine.SetColor(LineColor);
+	LeftLine.LineThickness = 2.0f;
+	Canvas->DrawItem(LeftLine);
+
 	// Right
-	Canvas->DrawItem(FCanvasLineItem(Position + FVector2D(Size.X, 0), Position + Size, BorderColor));
+	FCanvasLineItem RightLine(Position + FVector2D(Size.X, 0), Position + Size);
+	RightLine.SetColor(LineColor);
+	RightLine.LineThickness = 2.0f;
+	Canvas->DrawItem(RightLine);
 }

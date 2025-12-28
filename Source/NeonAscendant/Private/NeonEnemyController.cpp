@@ -3,15 +3,12 @@
 #include "NeonCharacter.h"
 #include "Navigation/CrowdFollowingComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ANeonEnemyController::ANeonEnemyController()
 {
 	PrimaryActorTick.TickInterval = 0.2f;
-
-	// Use pathfinding
-	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
-	bUseControllerRotationRoll = false;
 }
 
 void ANeonEnemyController::BeginPlay()
@@ -260,7 +257,8 @@ FVector ANeonEnemyController::GetLineTraceStart() const
 		return FVector::ZeroVector;
 	}
 
-	return EnemyCharacter->GetActorLocation() + FVector(0.0f, 0.0f, EnemyCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 0.8f);
+	const double HeightOffset = EnemyCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 0.8;
+	return EnemyCharacter->GetActorLocation() + FVector(0.0, 0.0, HeightOffset);
 }
 
 FVector ANeonEnemyController::GetLineTraceEnd() const
@@ -270,7 +268,8 @@ FVector ANeonEnemyController::GetLineTraceEnd() const
 		return FVector::ZeroVector;
 	}
 
-	return PlayerCharacter->GetActorLocation() + FVector(0.0f, 0.0f, PlayerCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 0.8f);
+	const double HeightOffset = PlayerCharacter->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 0.8;
+	return PlayerCharacter->GetActorLocation() + FVector(0.0, 0.0, HeightOffset);
 }
 
 FVector ANeonEnemyController::GetRandomPatrolPoint()
