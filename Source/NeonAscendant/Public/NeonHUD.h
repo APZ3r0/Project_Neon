@@ -64,7 +64,7 @@ protected:
 	FVector2D ObjectiveTrackerPosition = FVector2D(20.0f, 400.0f);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD|Layout")
-	FVector2D AmmoCounterPosition = FVector2D(20.0f, Canvas->SizeY - 100.0f);
+	FVector2D AmmoCounterPosition = FVector2D(20.0f, 100.0f);
 
 	// Draw functions
 	void DrawHealthBar();
