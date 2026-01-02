@@ -55,4 +55,18 @@ protected:
 	// Spawned hazards tracking
 	UPROPERTY(BlueprintReadOnly, Category = "Mission")
 	TArray<TObjectPtr<ADistrictHazard>> ActiveHazards;
+
+private:
+	// Enemy spawn configuration
+	static constexpr float EnemySpawnMinDistance = -2000.0f;
+	static constexpr float EnemySpawnMaxDistance = 2000.0f;
+	static constexpr float EnemySpawnHeightOffset = 100.0f;
+	static constexpr int32 DefaultEnemyCount = 3;
+
+	// Hazard spawn configuration
+	static constexpr float HazardSpawnMinDistance = -3000.0f;
+	static constexpr float HazardSpawnMaxDistance = 3000.0f;
+	static constexpr float HazardSpawnHeight = 100.0f;
+	static constexpr int32 MinHazardCount = 2;
+	static constexpr int32 MaxHazardCount = 3;
 };

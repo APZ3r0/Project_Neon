@@ -6,7 +6,7 @@
 
 ANeonWeapon::ANeonWeapon()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	// Create weapon mesh
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
@@ -15,19 +15,14 @@ ANeonWeapon::ANeonWeapon()
 	// Create muzzle location
 	MuzzleLocation = CreateDefaultSubobject<UArrowComponent>(TEXT("MuzzleLocation"));
 	MuzzleLocation->SetupAttachment(WeaponMesh);
-
-	CurrentAmmo = MaxAmmo;
 }
 
 void ANeonWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	CurrentAmmo = MaxAmmo;
-}
 
-void ANeonWeapon::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+	// Initialize ammo based on MaxAmmo (respects Blueprint overrides)
+	CurrentAmmo = MaxAmmo;
 }
 
 void ANeonWeapon::StartFire()

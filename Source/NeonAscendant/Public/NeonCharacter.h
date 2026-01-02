@@ -20,7 +20,6 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
@@ -47,7 +46,7 @@ protected:
 	float MaxHealth = 100.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
-	float CurrentHealth = 100.0f;
+	float CurrentHealth;
 
 public:
 	virtual float TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
@@ -96,7 +95,15 @@ public:
 	TObjectPtr<ANeonWeapon> CurrentWeapon;
 
 private:
+	// Movement configuration
 	float DefaultWalkSpeed = 600.0f;
 
+	// Camera configuration constants
+	static constexpr float FirstPersonCameraHeight = 64.0f;
+	static constexpr float ThirdPersonArmLength = 300.0f;
+	static constexpr float ThirdPersonArmSocketOffsetY = 50.0f;
+	static constexpr float ThirdPersonArmSocketOffsetZ = 75.0f;
+
 	void UpdateCameraMode();
+	FVector GetMovementDirection(EAxis::Type Axis) const;
 };

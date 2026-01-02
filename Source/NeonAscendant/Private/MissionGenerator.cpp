@@ -83,3 +83,12 @@ UMissionGenerator* UMissionGeneratorSingleton::GetGenerator()
 
     return GeneratorInstance;
 }
+
+void UMissionGeneratorSingleton::Shutdown()
+{
+    if (GeneratorInstance)
+    {
+        GeneratorInstance->RemoveFromRoot();
+        GeneratorInstance = nullptr;
+    }
+}

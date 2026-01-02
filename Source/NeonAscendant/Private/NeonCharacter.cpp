@@ -7,7 +7,7 @@
 
 ANeonCharacter::ANeonCharacter()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	// Configure capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.0f, 96.0f);
@@ -28,9 +28,9 @@ ANeonCharacter::ANeonCharacter()
 	// Create third-person camera boom
 	ThirdPersonArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("ThirdPersonArm"));
 	ThirdPersonArm->SetupAttachment(RootComponent);
-	ThirdPersonArm->TargetArmLength = 300.0f;
+	ThirdPersonArm->TargetArmLength = ThirdPersonArmLength;
 	ThirdPersonArm->bUsePawnControlRotation = true;
-	ThirdPersonArm->SocketOffset = FVector(0.0f, 50.0f, 75.0f);
+	ThirdPersonArm->SocketOffset = FVector(0.0f, ThirdPersonArmSocketOffsetY, ThirdPersonArmSocketOffsetZ);
 
 	// Create third-person camera
 	ThirdPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ThirdPersonCamera"));
@@ -40,13 +40,17 @@ ANeonCharacter::ANeonCharacter()
 	// Create first-person camera
 	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCamera->SetupAttachment(GetCapsuleComponent());
-	FirstPersonCamera->SetRelativeLocation(FVector(0.0f, 0.0f, 64.0f));
+	FirstPersonCamera->SetRelativeLocation(FVector(0.0f, 0.0f, FirstPersonCameraHeight));
 	FirstPersonCamera->bUsePawnControlRotation = true;
 }
 
 void ANeonCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Initialize health based on MaxHealth (respects Blueprint overrides)
+	CurrentHealth = MaxHealth;
+
 	UpdateCameraMode();
 
 	// Equip starting weapon
@@ -54,11 +58,6 @@ void ANeonCharacter::BeginPlay()
 	{
 		EquipWeapon(StartingWeaponClass);
 	}
-}
-
-void ANeonCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 
 void ANeonCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -89,25 +88,31 @@ void ANeonCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ANeonCharacter::Reload);
 }
 
+FVector ANeonCharacter::GetMovementDirection(EAxis::Type Axis) const
+{
+	if (!Controller)
+	{
+		return FVector::ZeroVector;
+	}
+
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
+	return FRotationMatrix(YawRotation).GetUnitAxis(Axis);
+}
+
 void ANeonCharacter::MoveForward(float Value)
 {
-	if (Controller && Value != 0.0f)
+	if (Value != 0.0f)
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value);
+		AddMovementInput(GetMovementDirection(EAxis::X), Value);
 	}
 }
 
 void ANeonCharacter::MoveRight(float Value)
 {
-	if (Controller && Value != 0.0f)
+	if (Value != 0.0f)
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		AddMovementInput(Direction, Value);
+		AddMovementInput(GetMovementDirection(EAxis::Y), Value);
 	}
 }
 
@@ -145,26 +150,32 @@ void ANeonCharacter::StopSprint()
 
 void ANeonCharacter::Fire()
 {
-	if (CurrentWeapon)
+	if (!CurrentWeapon)
 	{
-		CurrentWeapon->StartFire();
+		return;
 	}
+
+	CurrentWeapon->StartFire();
 }
 
 void ANeonCharacter::StopFire()
 {
-	if (CurrentWeapon)
+	if (!CurrentWeapon)
 	{
-		CurrentWeapon->StopFire();
+		return;
 	}
+
+	CurrentWeapon->StopFire();
 }
 
 void ANeonCharacter::Reload()
 {
-	if (CurrentWeapon)
+	if (!CurrentWeapon)
 	{
-		CurrentWeapon->Reload();
+		return;
 	}
+
+	CurrentWeapon->Reload();
 }
 
 void ANeonCharacter::EquipWeapon(TSubclassOf<ANeonWeapon> WeaponClass)

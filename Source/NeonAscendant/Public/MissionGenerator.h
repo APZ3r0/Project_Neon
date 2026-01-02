@@ -37,6 +37,9 @@ public:
     UFUNCTION(BlueprintPure, Category="Mission")
     static UMissionGenerator* GetGenerator();
 
+    // Cleanup singleton instance (called during module shutdown)
+    static void Shutdown();
+
 private:
     static TObjectPtr<UMissionGenerator> GeneratorInstance;
 };
