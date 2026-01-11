@@ -10,13 +10,13 @@ ANeonCharacter::ANeonCharacter()
 	PrimaryActorTick.bCanEverTick = false;
 
 	// Configure capsule
-	GetCapsuleComponent()->InitCapsuleSize(42.0f, 96.0f);
+	GetCapsuleComponent()->InitCapsuleSize(CapsuleRadius, CapsuleHalfHeight);
 
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = false;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
-	GetCharacterMovement()->JumpZVelocity = 600.0f;
-	GetCharacterMovement()->AirControl = 0.2f;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, DefaultRotationRate, 0.0f);
+	GetCharacterMovement()->JumpZVelocity = DefaultJumpZVelocity;
+	GetCharacterMovement()->AirControl = DefaultAirControl;
 	GetCharacterMovement()->MaxWalkSpeed = DefaultWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeedCrouched = DefaultWalkSpeed * CrouchSpeedMultiplier;
 
@@ -183,6 +183,10 @@ void ANeonCharacter::EquipWeapon(TSubclassOf<ANeonWeapon> WeaponClass)
 	if (!WeaponClass)
 		return;
 
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
 	// Destroy current weapon if exists
 	if (CurrentWeapon)
 	{
@@ -194,21 +198,20 @@ void ANeonCharacter::EquipWeapon(TSubclassOf<ANeonWeapon> WeaponClass)
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = this;
 
-	CurrentWeapon = GetWorld()->SpawnActor<ANeonWeapon>(WeaponClass, SpawnParams);
+	CurrentWeapon = World->SpawnActor<ANeonWeapon>(WeaponClass, SpawnParams);
 
 	if (CurrentWeapon)
 	{
 		// Attach to character mesh
-		FName WeaponSocket = TEXT("hand_rSocket");
-		if (GetMesh()->DoesSocketExist(WeaponSocket))
+		if (GetMesh()->DoesSocketExist(WeaponSocketName))
 		{
-			CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocket);
+			CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocketName);
 		}
 		else
 		{
 			// Fallback to camera if socket doesn't exist
 			CurrentWeapon->AttachToComponent(FirstPersonCamera, FAttachmentTransformRules::SnapToTargetIncludingScale);
-			CurrentWeapon->SetActorRelativeLocation(FVector(30.0f, 10.0f, -10.0f));
+			CurrentWeapon->SetActorRelativeLocation(FVector(FallbackWeaponOffsetX, FallbackWeaponOffsetY, FallbackWeaponOffsetZ));
 		}
 	}
 }
@@ -238,8 +241,11 @@ float ANeonCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, 
 	}
 
 	CurrentHealth -= ActualDamage;
+
+#if !UE_BUILD_SHIPPING
 	UE_LOG(LogTemp, Log, TEXT("Player took %.0f damage. Health: %.0f/%.0f"),
 		ActualDamage, CurrentHealth, MaxHealth);
+#endif
 
 	if (CurrentHealth <= 0.0f)
 	{
@@ -251,7 +257,9 @@ float ANeonCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, 
 
 void ANeonCharacter::Die()
 {
+#if !UE_BUILD_SHIPPING
 	UE_LOG(LogTemp, Log, TEXT("Player died!"));
+#endif
 
 	// Disable input
 	if (Controller)
@@ -278,5 +286,5 @@ void ANeonCharacter::Die()
 	}
 
 	// Destroy after delay
-	SetLifeSpan(10.0f);
+	SetLifeSpan(DeathLifespan);
 }

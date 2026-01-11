@@ -36,12 +36,25 @@ FMissionBrief UMissionGenerator::GenerateMissionBrief()
     const TArray<FString>& Complications = NeonAscendantData::GetComplications();
     const TArray<FString>& ExtractionConditions = NeonAscendantData::GetExtractionConditions();
 
+    // Validate that all data arrays are non-empty
+    ensureMsgf(Districts.Num() > 0, TEXT("Districts array is empty!"));
+    ensureMsgf(Factions.Num() > 0, TEXT("Factions array is empty!"));
+    ensureMsgf(Archetypes.Num() > 0, TEXT("Archetypes array is empty!"));
+    ensureMsgf(Weapons.Num() > 0, TEXT("Weapons array is empty!"));
+    ensureMsgf(Implants.Num() > 0, TEXT("Implants array is empty!"));
+    ensureMsgf(Complications.Num() > 0, TEXT("Complications array is empty!"));
+    ensureMsgf(ExtractionConditions.Num() > 0, TEXT("ExtractionConditions array is empty!"));
+
     const FAscendantDistrict& District = Districts[RandomStream.RandRange(0, Districts.Num() - 1)];
     const FAscendantFaction& Opposition = Factions[RandomStream.RandRange(0, Factions.Num() - 1)];
     const FAscendantArchetype& Archetype = Archetypes[RandomStream.RandRange(0, Archetypes.Num() - 1)];
     const FAscendantWeapon& Weapon = Weapons[RandomStream.RandRange(0, Weapons.Num() - 1)];
     const FAscendantImplant& Implant = Implants[RandomStream.RandRange(0, Implants.Num() - 1)];
+
+    // Validate archetype has abilities before accessing
+    ensureMsgf(Archetype.SignatureAbilities.Num() > 0, TEXT("Archetype '%s' has no signature abilities!"), *Archetype.Name);
     const FAscendantAbility& Ability = Archetype.SignatureAbilities[RandomStream.RandRange(0, Archetype.SignatureAbilities.Num() - 1)];
+
     const FString& Complication = Complications[RandomStream.RandRange(0, Complications.Num() - 1)];
     const FString& ExtractionCondition = ExtractionConditions[RandomStream.RandRange(0, ExtractionConditions.Num() - 1)];
 

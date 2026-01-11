@@ -30,13 +30,17 @@ void ANeonWeapon::StartFire()
 	if (bIsReloading)
 		return;
 
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
 	bIsFiring = true;
 
 	if (bIsAutomatic)
 	{
 		// Automatic fire
 		Fire();
-		GetWorld()->GetTimerManager().SetTimer(FireTimerHandle, this, &ANeonWeapon::Fire, FireRate, true);
+		World->GetTimerManager().SetTimer(FireTimerHandle, this, &ANeonWeapon::Fire, FireRate, true);
 	}
 	else
 	{
@@ -48,7 +52,12 @@ void ANeonWeapon::StartFire()
 void ANeonWeapon::StopFire()
 {
 	bIsFiring = false;
-	GetWorld()->GetTimerManager().ClearTimer(FireTimerHandle);
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->GetTimerManager().ClearTimer(FireTimerHandle);
+	}
 }
 
 void ANeonWeapon::Fire()
@@ -61,60 +70,103 @@ void ANeonWeapon::Fire()
 
 	CurrentAmmo--;
 
-	// Get camera viewpoint for accurate shooting
-	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
+	APlayerController* PlayerController = World->GetFirstPlayerController();
 	if (!PlayerController)
 		return;
 
+	// Get camera viewpoint for accurate shooting
 	FVector CameraLocation;
 	FRotator CameraRotation;
-	PlayerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
+	if (!GetCameraViewpoint(CameraLocation, CameraRotation))
+		return;
 
 	// Calculate shot direction from camera
-	FVector ShotDirection = CameraRotation.Vector();
-	FVector TraceStart = CameraLocation;
-	FVector TraceEnd = TraceStart + (ShotDirection * Range);
+	const FVector ShotDirection = CameraRotation.Vector();
+	const FVector TraceStart = CameraLocation;
+	const FVector TraceEnd = TraceStart + (ShotDirection * Range);
 
 	// Perform line trace
 	FHitResult HitResult;
+	const bool bHit = PerformLineTrace(TraceStart, TraceEnd, HitResult);
+
+	if (bHit)
+	{
+		ApplyDamageToHit(HitResult, ShotDirection, PlayerController);
+	}
+
+	// Debug visualization
+	DrawDebugShot(TraceStart, bHit ? HitResult.Location : TraceEnd, bHit);
+}
+
+bool ANeonWeapon::GetCameraViewpoint(FVector& OutLocation, FRotator& OutRotation) const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+		return false;
+
+	APlayerController* PlayerController = World->GetFirstPlayerController();
+	if (!PlayerController)
+		return false;
+
+	PlayerController->GetPlayerViewPoint(OutLocation, OutRotation);
+	return true;
+}
+
+bool ANeonWeapon::PerformLineTrace(const FVector& Start, const FVector& End, FHitResult& OutHit) const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+		return false;
+
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 	QueryParams.AddIgnoredActor(GetOwner());
 	QueryParams.bTraceComplex = true;
 
-	bool bHit = GetWorld()->LineTraceSingleByChannel(
-		HitResult,
-		TraceStart,
-		TraceEnd,
+	return World->LineTraceSingleByChannel(
+		OutHit,
+		Start,
+		End,
 		ECC_Visibility,
 		QueryParams
 	);
+}
+
+void ANeonWeapon::ApplyDamageToHit(const FHitResult& HitResult, const FVector& ShotDirection, APlayerController* InstigatorController)
+{
+	AActor* HitActor = HitResult.GetActor();
+	if (HitActor)
+	{
+		UGameplayStatics::ApplyPointDamage(
+			HitActor,
+			Damage,
+			ShotDirection,
+			HitResult,
+			InstigatorController,
+			this,
+			UDamageType::StaticClass()
+		);
+	}
+}
+
+void ANeonWeapon::DrawDebugShot(const FVector& Start, const FVector& End, bool bHit) const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
 
 	if (bHit)
 	{
-		// Apply damage to hit actor
-		AActor* HitActor = HitResult.GetActor();
-		if (HitActor)
-		{
-			UGameplayStatics::ApplyPointDamage(
-				HitActor,
-				Damage,
-				ShotDirection,
-				HitResult,
-				PlayerController,
-				this,
-				UDamageType::StaticClass()
-			);
-		}
-
-		// Debug visualization
-		DrawDebugLine(GetWorld(), TraceStart, HitResult.Location, FColor::Red, false, 1.0f, 0, 2.0f);
-		DrawDebugPoint(GetWorld(), HitResult.Location, 10.0f, FColor::Red, false, 1.0f);
+		DrawDebugLine(World, Start, End, FColor::Red, false, 1.0f, 0, 2.0f);
+		DrawDebugPoint(World, End, 10.0f, FColor::Red, false, 1.0f);
 	}
 	else
 	{
-		// Debug visualization for miss
-		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::White, false, 1.0f, 0, 1.0f);
+		DrawDebugLine(World, Start, End, FColor::White, false, 1.0f, 0, 1.0f);
 	}
 }
 
@@ -123,10 +175,14 @@ void ANeonWeapon::Reload()
 	if (bIsReloading || CurrentAmmo == MaxAmmo)
 		return;
 
+	UWorld* World = GetWorld();
+	if (!World)
+		return;
+
 	bIsReloading = true;
 	StopFire();
 
-	GetWorld()->GetTimerManager().SetTimer(ReloadTimerHandle, this, &ANeonWeapon::FinishReload, ReloadTime, false);
+	World->GetTimerManager().SetTimer(ReloadTimerHandle, this, &ANeonWeapon::FinishReload, ReloadTime, false);
 }
 
 void ANeonWeapon::FinishReload()

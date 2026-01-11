@@ -56,6 +56,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Mission")
 	TArray<TObjectPtr<ADistrictHazard>> ActiveHazards;
 
+	// Random stream for deterministic spawning
+	FRandomStream SpawnRandomStream;
+
 private:
 	// Enemy spawn configuration
 	static constexpr float EnemySpawnMinDistance = -2000.0f;

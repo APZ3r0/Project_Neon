@@ -77,4 +77,14 @@ protected:
 	FColor GetHealthColor() const;
 	void DrawFilledRect(FVector2D Position, FVector2D Size, FColor Color);
 	void DrawBorderedRect(FVector2D Position, FVector2D Size, FColor BorderColor, FColor FillColor);
+
+private:
+	// HUD constants
+	static constexpr float HealthDamagedThreshold = 0.5f;
+	static constexpr float HealthCriticalThreshold = 0.25f;
+	static constexpr float LineHeight = 20.0f;
+	static constexpr float LineThickness = 2.0f;
+	static constexpr float RectPadding = 2.0f;
+	static constexpr float RectBorderSize = 4.0f;
+	static inline const FColor BriefingCyanColor = FColor(0, 200, 255);
 };
