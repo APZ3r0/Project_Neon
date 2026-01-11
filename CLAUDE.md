@@ -11,6 +11,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Key Philosophy**: The mission generator is central to the game design. All lore data (districts, factions, archetypes, weapons, implants) is hard-coded in C++ for deterministic, seeded random generation using `FRandomStream`.
 
+## Implementation Status
+
+**Fully Implemented:**
+- ✅ Mission generation system with deterministic seeding
+- ✅ Player character with dual camera, movement, health, and combat
+- ✅ Weapon system with hitscan, ammo, reloading, auto/semi-auto modes
+- ✅ Enemy AI with state machine (Patrol, Investigate, Engage, Retreat)
+- ✅ Enemy characters with health, weapons, and combat
+- ✅ Canvas-based HUD with health bars, ammo counter, mission briefing
+- ✅ District hazards with area-of-effect damage and visual effects
+- ✅ Complete lore data (districts, factions, archetypes, weapons, implants)
+
+**Not Yet Implemented:**
+- ❌ Objective tracking and completion system
+- ❌ Extraction zones and win conditions
+- ❌ Ability system (referenced in archetype abilities)
+- ❌ Progression/rewards system
+- ❌ Save/load system
+- ❌ Procedural level generation (districts are data-driven but levels are manual)
+
 ## Building and Running
 
 ### Opening the Project
@@ -54,19 +74,28 @@ The `NeonAscendant` runtime module is organized as follows:
 - `MissionTypes.h` - All USTRUCT definitions (archetypes, weapons, districts, factions, implants, mission briefs)
 - `MissionData.h` - Namespace functions returning lore data arrays
 - `MissionGenerator.h` - Blueprint-callable mission generator singleton API
-- `NeonCharacter.h` - Player character with first/third-person camera, movement, weapon handling
+- `NeonCharacter.h` - Player character with first/third-person camera, movement, weapon handling, health system
 - `NeonWeapon.h` - Hitscan weapon system with ammo, reloading, auto/semi-auto modes
 - `NeonGameMode.h` - Game mode that integrates mission generator
+- `NeonEnemy.h` - AI-controlled enemy character with health, weapons, and targeting
+- `NeonEnemyController.h` - AI controller with state machine (Patrol, Investigate, Engaged, Retreat)
+- `NeonHUD.h` - Canvas-based HUD with health, ammo, mission briefing, and objective tracking
+- `DistrictHazard.h` - Environmental hazard actors with damage-over-time effects
 
 **Private Implementation** (`Source/NeonAscendant/Private/`):
 - `MissionData.cpp` - **All lore data hard-coded here** (archetypes, weapons, districts, factions, complications, extraction conditions)
 - `MissionGenerator.cpp` - Mission assembly logic using `FRandomStream` for deterministic generation
-- `NeonCharacter.cpp` - Character movement, input handling, weapon equipping
+- `NeonCharacter.cpp` - Character movement, input handling, weapon equipping, health and damage
 - `NeonWeapon.cpp` - Weapon firing, damage application, ammo management
 - `NeonGameMode.cpp` - Game initialization, mission generation startup
+- `NeonEnemy.cpp` - Enemy behavior, weapon handling, death logic
+- `NeonEnemyController.cpp` - AI state machine implementation, pathfinding, combat logic
+- `NeonHUD.cpp` - HUD rendering with Canvas API, mission display, player stats
+- `DistrictHazard.cpp` - Hazard overlap detection, damage application, visual effects
 
 **Build Configuration** (`Source/NeonAscendant/NeonAscendant.Build.cs`):
-- Dependencies: `Core`, `CoreUObject`, `Engine`, `GameplayTags`, `InputCore`, `EnhancedInput`, `Projects`
+- Public Dependencies: `Core`, `CoreUObject`, `Engine`, `GameplayTags`, `InputCore`, `EnhancedInput`, `AIModule`
+- Private Dependencies: `Projects`
 - Exceptions enabled (`bEnableExceptions = true`)
 
 ### Mission Generation System
@@ -106,6 +135,8 @@ All data is randomly selected from hard-coded arrays in `MissionData.cpp` using 
 - Movement: WASD, jump, crouch (with speed multipliers), sprint
 - Input: Mouse look, gamepad support
 - Weapon system: Equips weapon via `EquipWeapon()`, fires via input bindings
+- Health system: `MaxHealth`, `CurrentHealth`, `TakeDamage()`, `Die()`, health percentage getters
+- Blueprint-callable: `GetHealth()`, `GetMaxHealth()`, `GetHealthPercent()`
 - Default walk speed: 600.0, sprint multiplier: 1.5x, crouch multiplier: 0.5x
 
 **ANeonWeapon**:
@@ -119,6 +150,47 @@ All data is randomly selected from hard-coded arrays in `MissionData.cpp` using 
 - Sets up player character on `BeginPlay()`
 - Integrates mission generator via `GetMissionGenerator()`
 - `StartNewMission()` generates new mission brief
+
+**ANeonEnemy**:
+- AI-controlled enemy character inheriting from `ACharacter`
+- Health system: `MaxHealth`, `CurrentHealth`, `TakeDamage()`, `Die()`
+- Weapon system: `WeaponClass`, `EquippedWeapon`, `FireWeapon()`
+- Detection and targeting: `DetectionRange`, `AttackRange`, `TargetPlayer`
+- Combat configuration: `FireInterval` for controlling rate of fire
+- Blueprint-callable: `GetEnemyController()`, exposes `bIsDead` state
+- Automatically controlled by `ANeonEnemyController` AI
+
+**ANeonEnemyController**:
+- AI controller with state machine: `Patrol`, `Investigate`, `Engaged`, `Retreat`, `Dead`
+- Perception system: Line-of-sight checks, damage awareness, player tracking
+- Patrol behavior: Random waypoint generation, configurable speed and wait times
+- Investigation: Searches last known player location when target lost
+- Engagement: Moves to attack range and commands enemy to fire weapon
+- Retreat: Falls back when health drops below threshold (default 25%)
+- Blueprint-accessible: `GetAIState()`, state change events
+- Configurable ranges: `DetectionRange`, `AttackRange`, `LostTargetDistance`
+
+**ANeonHUD**:
+- Canvas-based HUD inheriting from `AHUD`
+- Displays health bar with color-coded status (green/yellow/red)
+- Shows current mission briefing (district, opposition, archetype, weapon, etc.)
+- Ammo counter synchronized with equipped weapon
+- Objective tracker for current mission goals
+- Extraction zone indicator
+- Blueprint-callable: `SetMissionBrief()`, `SetPlayerCharacter()`
+- Fully customizable: colors, positions, sizes all exposed as Blueprint properties
+- HUD layout configurable via properties: `HealthBarPosition`, `MissionBriefingPosition`, etc.
+
+**ADistrictHazard**:
+- Environmental hazard actor causing area-of-effect damage
+- Hazard types: `Thermal`, `Electrical`, `Toxic`, `Radiation`, `Cryogenic`
+- Damage-over-time: Configurable `DamagePerSecond` and `DamageTickRate`
+- Sphere-based area of effect with configurable `EffectRadius`
+- Automatic overlap detection and damage application to characters
+- Visual feedback: `HazardColor`, `VisualIntensity`, particle effects
+- Blueprint-configurable: All damage and visual parameters exposed
+- Can be toggled on/off via `bIsActive` property
+- Corresponds to hazard arrays in mission district data
 
 ### Input Bindings
 
@@ -168,6 +240,27 @@ Configured in `Config/DefaultInput.ini`:
 2. Set `Default Pawn Class` to your character Blueprint
 3. Use `StartNewMission()` to generate missions on level start
 
+**Enemy Blueprint**:
+1. Content Browser → Blueprint Class → `NeonEnemy`
+2. Set `WeaponClass` to the weapon Blueprint you want the enemy to use
+3. Configure `MaxHealth`, `DetectionRange`, `AttackRange`, `FireInterval`
+4. Assign skeletal mesh and animations
+5. Place in level - will automatically use AI controller for behavior
+
+**HUD Blueprint**:
+1. Content Browser → Blueprint Class → `NeonHUD`
+2. Configure colors: `HealthyColor`, `DamagedColor`, `CriticalColor`, `TextColor`
+3. Adjust layout positions: `HealthBarPosition`, `AmmoCounterPosition`, etc.
+4. Set in Game Mode's HUD Class property
+5. HUD will automatically track player and display mission info
+
+**District Hazard Blueprint**:
+1. Content Browser → Blueprint Class → `DistrictHazard`
+2. Set `HazardType` (Thermal, Electrical, Toxic, Radiation, Cryogenic)
+3. Configure `DamagePerSecond`, `EffectRadius`, `DamageTickRate`
+4. Set `HazardColor` and `VisualIntensity` for visual feedback
+5. Place in level to create danger zones matching district theme
+
 ### Debugging Mission Generation
 
 Use deterministic seeding to reproduce specific missions:
@@ -208,6 +301,93 @@ UE_LOG(LogTemp, Warning, TEXT("Opposition: %s"), *Mission.Opposition.Name);
 - Blueprint-facing structs defined in `MissionTypes.h`
 
 ## Common Patterns
+
+### Spawning Enemies
+```cpp
+// In level initialization or game mode
+void AMyGameMode::SpawnEnemies(const FMissionBrief& Mission)
+{
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+    // Spawn enemy at location
+    ANeonEnemy* Enemy = GetWorld()->SpawnActor<ANeonEnemy>(
+        EnemyClass,
+        SpawnLocation,
+        FRotator::ZeroRotator,
+        SpawnParams
+    );
+
+    // Configure based on mission opposition
+    Enemy->MaxHealth = CalculateHealthFromFaction(Mission.Opposition);
+    Enemy->WeaponClass = GetWeaponFromMissionData(Mission.PrimaryWeapon);
+}
+```
+
+### Setting Up HUD
+```cpp
+// In game mode or player controller
+void AMyGameMode::InitializeHUD(ANeonCharacter* Player, const FMissionBrief& Mission)
+{
+    if (ANeonHUD* HUD = Cast<ANeonHUD>(Player->GetController()->GetHUD()))
+    {
+        HUD->SetPlayerCharacter(Player);
+        HUD->SetMissionBrief(Mission);
+    }
+}
+```
+
+### Placing District Hazards
+```cpp
+// In level setup or procedural generation
+void AMyLevelGenerator::PlaceHazards(const FAscendantDistrict& District)
+{
+    for (const FString& HazardName : District.Hazards)
+    {
+        EHazardType Type = GetHazardTypeFromName(HazardName);
+
+        FActorSpawnParameters SpawnParams;
+        ADistrictHazard* Hazard = GetWorld()->SpawnActor<ADistrictHazard>(
+            DistrictHazardClass,
+            GetRandomLocationInDistrict(),
+            FRotator::ZeroRotator,
+            SpawnParams
+        );
+
+        Hazard->HazardType = Type;
+        Hazard->DamagePerSecond = 15.0f;
+        Hazard->EffectRadius = 500.0f;
+    }
+}
+```
+
+### Customizing AI Behavior
+```cpp
+// Access AI state in gameplay code
+void AMyActor::ReactToEnemyState(ANeonEnemy* Enemy)
+{
+    ANeonEnemyController* AIController = Enemy->GetEnemyController();
+    if (AIController)
+    {
+        EEnemyAIState State = AIController->GetAIState();
+        switch (State)
+        {
+            case EEnemyAIState::Patrol:
+                // Enemy is patrolling, unaware
+                break;
+            case EEnemyAIState::Investigate:
+                // Enemy is searching for player
+                break;
+            case EEnemyAIState::Engaged:
+                // Enemy is actively fighting
+                break;
+            case EEnemyAIState::Retreat:
+                // Enemy is retreating (low health)
+                break;
+        }
+    }
+}
+```
 
 ### Getting Mission Data in C++
 ```cpp
@@ -253,6 +433,26 @@ Get Current Weapon → Get Current Ammo
 Get Current Weapon → Is Reloading
 ```
 
+### Accessing Health in Blueprint
+```blueprint
+// Player character health
+Get Health Percent → [0.0 to 1.0 for UI bars]
+Get Health → [Current health value]
+Get Max Health → [Maximum health value]
+
+// Enemy health
+Cast to NeonEnemy → Get Current Health
+Cast to NeonEnemy → Is Dead
+```
+
+### Checking AI State in Blueprint
+```blueprint
+Get Enemy Controller → Get AI State → Switch on EEnemyAIState
+  - Patrol: Do something
+  - Engaged: Do something else
+  - Retreat: Handle retreat
+```
+
 ## Important Notes
 
 ### Module Dependencies
@@ -260,6 +460,7 @@ The `NeonAscendant` module requires:
 - `GameplayTags` - for archetype identification
 - `EnhancedInput` - for improved input handling
 - `InputCore` - for legacy input binding support
+- `AIModule` - for enemy AI controllers and navigation
 
 If adding new systems, update `NeonAscendant.Build.cs` with required modules.
 
@@ -284,26 +485,41 @@ If adding new systems, update `NeonAscendant.Build.cs` with required modules.
 ### Adding Abilities
 1. Create `UNeonAbility` base class inheriting from `UObject`
 2. Implement cooldown system using timers
-3. Add ability instances to `ANeonCharacter`
-4. Bind to input actions
-5. Reference archetype abilities from mission brief
+3. Add ability instances to `ANeonCharacter` and `ANeonEnemy`
+4. Bind to input actions for player, trigger via AI for enemies
+5. Reference archetype abilities from mission brief for flavor text
 
-### Creating Enemy AI
-1. Create `ANeonEnemy` class inheriting from `ACharacter`
-2. Create AI Controller with Behavior Tree
-3. Implement health/damage system
-4. Use Navigation Mesh for pathfinding
-5. Spawn enemies based on mission `Opposition` faction
+### Enhancing Enemy AI
+The enemy AI system is fully implemented with a state machine. To enhance it:
+1. Add new states to `EEnemyAIState` enum in `NeonEnemyController.h`
+2. Implement state behavior in new `Update[StateName]Behavior()` methods
+3. Add state transitions in `UpdateAIBehavior()` based on conditions
+4. Configure behavior parameters via Blueprint child classes
+5. Consider adding Behavior Trees for more complex decision-making
 
 ### Building Districts
 1. Create level geometry matching district themes (Neon Sprawl, Chrome Heights, etc.)
-2. Apply district hazards from `FAscendantDistrict.Hazards` array
-3. Place enemy spawn points
-4. Configure lighting and atmosphere using Lumen
+2. Place `ADistrictHazard` actors matching `FAscendantDistrict.Hazards` array
+3. Configure hazard types and damage based on district theme
+4. Place enemy spawn points using mission's Opposition faction
+5. Add Navigation Mesh Bounds Volume for AI pathfinding
+6. Configure lighting and atmosphere using Lumen for cyberpunk aesthetic
+7. Use district data to determine enemy density and weapon types
 
-### UI/HUD Integration
-1. Create UMG Widget Blueprint
-2. Bind to character properties: health, ammo, sprint state
-3. Display mission brief on level start
-4. Show objective markers and extraction zones
-5. Add ability cooldown indicators
+### Enhancing the HUD
+The Canvas-based HUD is implemented. To customize or extend:
+1. Subclass `ANeonHUD` in Blueprint or C++
+2. Override `DrawHUD()` to add custom Canvas drawing
+3. Add UMG widgets for more complex UI elements (inventory, skill trees, etc.)
+4. Use `SetMissionBrief()` to update mission display dynamically
+5. Add minimap, compass, or waypoint markers using Canvas API
+6. Implement damage indicators, crosshairs, or hit markers
+7. Consider hybrid approach: Canvas for performance-critical elements, UMG for menus
+
+### Implementing Objectives and Extraction
+1. Create objective system tracking mission goals
+2. Add extraction zone actors that check win conditions from `FMissionBrief.ExtractionCondition`
+3. Track kill counts, time limits, or item collection based on mission type
+4. Update HUD objective tracker with current progress
+5. Trigger mission complete when extraction condition met
+6. Award rewards based on mission difficulty (complications, district hazards)
