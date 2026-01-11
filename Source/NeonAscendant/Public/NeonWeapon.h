@@ -44,6 +44,12 @@ public:
 protected:
 	void FinishReload();
 
+	// Helper functions for Fire()
+	bool GetCameraViewpoint(FVector& OutLocation, FRotator& OutRotation) const;
+	bool PerformLineTrace(const FVector& Start, const FVector& End, FHitResult& OutHit) const;
+	void ApplyDamageToHit(const FHitResult& HitResult, const FVector& ShotDirection, APlayerController* InstigatorController);
+	void DrawDebugShot(const FVector& Start, const FVector& End, bool bHit) const;
+
 	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<USkeletalMeshComponent> WeaponMesh;

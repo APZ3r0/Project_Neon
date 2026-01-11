@@ -16,6 +16,9 @@ ANeonGameMode::ANeonGameMode()
 
 	// Set default HUD class
 	HUDClass = ANeonHUD::StaticClass();
+
+	// Initialize spawn random stream with a seed based on time
+	SpawnRandomStream.Initialize(FPlatformTime::Cycles());
 }
 
 void ANeonGameMode::BeginPlay()
@@ -115,8 +118,8 @@ void ANeonGameMode::SpawnEnemiesForMission(const FMissionBrief& Mission, int32 E
 		// Calculate spawn position: random location around the spawn origin
 		// In a real implementation, use designated spawn points
 		FVector SpawnLocation = SpawnOrigin + FVector(
-			FMath::RandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
-			FMath::RandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
+			SpawnRandomStream.FRandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
+			SpawnRandomStream.FRandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
 			EnemySpawnHeightOffset
 		);
 
@@ -126,11 +129,14 @@ void ANeonGameMode::SpawnEnemiesForMission(const FMissionBrief& Mission, int32 E
 		// Spawn the enemy
 		// Note: ANeonEnemy class has been created - see GAME_DEVELOPMENT.md Step 2
 		ANeonEnemy* NewEnemy = World->SpawnActor<ANeonEnemy>(EnemyClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
+
+#if !UE_BUILD_SHIPPING
 		if (NewEnemy)
 		{
-			UE_LOG(LogTemp, Log, TEXT("Spawned enemy %d at location (%.0f, %.0f, %.0f)"), 
+			UE_LOG(LogTemp, Log, TEXT("Spawned enemy %d at location (%.0f, %.0f, %.0f)"),
 				i + 1, SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
 		}
+#endif
 	}
 }
 
@@ -160,7 +166,7 @@ void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
 	ActiveHazards.Empty();
 
 	// Spawn hazards based on the mission's complication (which relates to district)
-	int32 HazardCount = FMath::RandRange(MinHazardCount, MaxHazardCount);
+	int32 HazardCount = SpawnRandomStream.RandRange(MinHazardCount, MaxHazardCount);
 
 	UE_LOG(LogTemp, Log, TEXT("Spawning %d hazards for district %s"), HazardCount, *Mission.District.Name);
 
@@ -168,8 +174,8 @@ void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
 	{
 		// Calculate spawn position: random location around the level
 		FVector SpawnLocation = FVector(
-			FMath::RandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
-			FMath::RandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
+			SpawnRandomStream.FRandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
+			SpawnRandomStream.FRandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
 			HazardSpawnHeight
 		);
 
@@ -180,16 +186,19 @@ void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
 		ADistrictHazard* NewHazard = World->SpawnActor<ADistrictHazard>(HazardClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
 		if (NewHazard)
 		{
-			// Randomize hazard type
-			int32 HazardTypeIndex = FMath::RandRange(0, 4);
+			// Randomize hazard type using enum count for safety
+			const int32 HazardTypeCount = static_cast<int32>(EHazardType::Cryogenic) + 1;
+			int32 HazardTypeIndex = SpawnRandomStream.RandRange(0, HazardTypeCount - 1);
 			NewHazard->HazardType = static_cast<EHazardType>(HazardTypeIndex);
-			NewHazard->DamagePerSecond = FMath::RandRange(5.0f, 15.0f);
-			NewHazard->EffectRadius = FMath::RandRange(300.0f, 600.0f);
+			NewHazard->DamagePerSecond = SpawnRandomStream.FRandRange(5.0f, 15.0f);
+			NewHazard->EffectRadius = SpawnRandomStream.FRandRange(300.0f, 600.0f);
 
 			ActiveHazards.Add(NewHazard);
 
-			UE_LOG(LogTemp, Log, TEXT("Spawned hazard %d at location (%.0f, %.0f, %.0f)"), 
+#if !UE_BUILD_SHIPPING
+			UE_LOG(LogTemp, Log, TEXT("Spawned hazard %d at location (%.0f, %.0f, %.0f)"),
 				i + 1, SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
+#endif
 		}
 	}
 }

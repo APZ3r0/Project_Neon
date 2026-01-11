@@ -95,14 +95,28 @@ public:
 	TObjectPtr<ANeonWeapon> CurrentWeapon;
 
 private:
-	// Movement configuration
-	float DefaultWalkSpeed = 600.0f;
+	// Movement configuration constants
+	static constexpr float DefaultWalkSpeed = 600.0f;
+	static constexpr float DefaultRotationRate = 540.0f;
+	static constexpr float DefaultJumpZVelocity = 600.0f;
+	static constexpr float DefaultAirControl = 0.2f;
+	static constexpr float DeathLifespan = 10.0f;
+
+	// Capsule configuration constants
+	static constexpr float CapsuleRadius = 42.0f;
+	static constexpr float CapsuleHalfHeight = 96.0f;
 
 	// Camera configuration constants
 	static constexpr float FirstPersonCameraHeight = 64.0f;
 	static constexpr float ThirdPersonArmLength = 300.0f;
 	static constexpr float ThirdPersonArmSocketOffsetY = 50.0f;
 	static constexpr float ThirdPersonArmSocketOffsetZ = 75.0f;
+
+	// Weapon configuration constants
+	static constexpr float FallbackWeaponOffsetX = 30.0f;
+	static constexpr float FallbackWeaponOffsetY = 10.0f;
+	static constexpr float FallbackWeaponOffsetZ = -10.0f;
+	static inline const FName WeaponSocketName = TEXT("hand_rSocket");
 
 	void UpdateCameraMode();
 	FVector GetMovementDirection(EAxis::Type Axis) const;

@@ -23,7 +23,9 @@ void ANeonHUD::BeginPlay()
 
 	if (PlayerCharacter)
 	{
+#if !UE_BUILD_SHIPPING
 		UE_LOG(LogTemp, Log, TEXT("NeonHUD found player character"));
+#endif
 	}
 }
 
@@ -54,9 +56,11 @@ void ANeonHUD::SetMissionBrief(const FMissionBrief& NewMission)
 	CurrentMission = NewMission;
 	bShowMissionBriefing = true;
 
+#if !UE_BUILD_SHIPPING
 	UE_LOG(LogTemp, Log, TEXT("HUD updated with mission: %s vs %s"),
 		*NewMission.District.Name,
 		*NewMission.Opposition.Name);
+#endif
 }
 
 void ANeonHUD::SetPlayerCharacter(ANeonCharacter* NewPlayer)
@@ -84,7 +88,7 @@ void ANeonHUD::DrawHealthBar()
 
 	// Draw health fill
 	FVector2D HealthSize = FVector2D(BarSize.X * HealthPercent, BarSize.Y);
-	DrawFilledRect(BarPosition + FVector2D(2.0f, 2.0f), HealthSize - FVector2D(4.0f, 4.0f), GetHealthColor());
+	DrawFilledRect(BarPosition + FVector2D(RectPadding, RectPadding), HealthSize - FVector2D(RectBorderSize, RectBorderSize), GetHealthColor());
 
 	// Draw health text
 	FString HealthText = FString::Printf(TEXT("Health: %.0f / %.0f"),
@@ -116,11 +120,9 @@ void ANeonHUD::DrawAmmoCounter()
 void ANeonHUD::DrawMissionBriefing()
 {
 	FVector2D Position = MissionBriefingPosition;
-	float LineHeight = 20.0f;
-	FColor BriefingColor = FColor(0, 200, 255); // Cyan
 
 	// Title
-	FCanvasTextItem TitleItem(Position, FText::FromString(TEXT("=== MISSION BRIEFING ===")), GEngine->GetSmallFont(), FLinearColor(BriefingColor));
+	FCanvasTextItem TitleItem(Position, FText::FromString(TEXT("=== MISSION BRIEFING ===")), GEngine->GetSmallFont(), FLinearColor(BriefingCyanColor));
 	Canvas->DrawItem(TitleItem);
 
 	Position.Y += LineHeight + 10.0f;
@@ -164,13 +166,13 @@ void ANeonHUD::DrawObjectiveTracker()
 	FCanvasTextItem TitleItem(Position, FText::FromString(TEXT("=== OBJECTIVE ===")), GEngine->GetSmallFont(), FLinearColor(ObjectiveColor));
 	Canvas->DrawItem(TitleItem);
 
-	Position.Y += 20.0f;
+	Position.Y += LineHeight;
 
 	FString ObjectiveText = FString::Printf(TEXT("Complication: %s"), *CurrentMission.Complication);
 	FCanvasTextItem ObjectiveItem(Position, FText::FromString(ObjectiveText), GEngine->GetSmallFont(), FLinearColor(TextColor));
 	Canvas->DrawItem(ObjectiveItem);
 
-	Position.Y += 20.0f;
+	Position.Y += LineHeight;
 
 	FString ExtractionText = FString::Printf(TEXT("Extract via: %s"), *CurrentMission.ExtractionCondition);
 	FCanvasTextItem ExtractionItem(Position, FText::FromString(ExtractionText), GEngine->GetSmallFont(), FLinearColor(TextColor));
@@ -200,11 +202,11 @@ FColor ANeonHUD::GetHealthColor() const
 
 	float HealthPercent = PlayerCharacter->GetHealthPercent();
 
-	if (HealthPercent > 0.5f)
+	if (HealthPercent > HealthDamagedThreshold)
 	{
 		return HealthyColor;
 	}
-	else if (HealthPercent > 0.25f)
+	else if (HealthPercent > HealthCriticalThreshold)
 	{
 		return DamagedColor;
 	}
@@ -232,24 +234,24 @@ void ANeonHUD::DrawBorderedRect(FVector2D Position, FVector2D Size, FColor Borde
 	// Top
 	FCanvasLineItem TopLine(Position, Position + FVector2D(Size.X, 0));
 	TopLine.SetColor(LineColor);
-	TopLine.LineThickness = 2.0f;
+	TopLine.LineThickness = LineThickness;
 	Canvas->DrawItem(TopLine);
 
 	// Bottom
 	FCanvasLineItem BottomLine(Position + FVector2D(0, Size.Y), Position + Size);
 	BottomLine.SetColor(LineColor);
-	BottomLine.LineThickness = 2.0f;
+	BottomLine.LineThickness = LineThickness;
 	Canvas->DrawItem(BottomLine);
 
 	// Left
 	FCanvasLineItem LeftLine(Position, Position + FVector2D(0, Size.Y));
 	LeftLine.SetColor(LineColor);
-	LeftLine.LineThickness = 2.0f;
+	LeftLine.LineThickness = LineThickness;
 	Canvas->DrawItem(LeftLine);
 
 	// Right
 	FCanvasLineItem RightLine(Position + FVector2D(Size.X, 0), Position + Size);
 	RightLine.SetColor(LineColor);
-	RightLine.LineThickness = 2.0f;
+	RightLine.LineThickness = LineThickness;
 	Canvas->DrawItem(RightLine);
 }

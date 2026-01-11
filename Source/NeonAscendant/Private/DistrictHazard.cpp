@@ -35,10 +35,12 @@ void ADistrictHazard::BeginPlay()
 	// Setup visual effects
 	CreateHazardEffects();
 
+#if !UE_BUILD_SHIPPING
 	UE_LOG(LogTemp, Log, TEXT("DistrictHazard spawned: %s at %s with radius %.0f"),
 		*GetHazardTypeName(),
 		*GetActorLocation().ToString(),
 		EffectRadius);
+#endif
 }
 
 void ADistrictHazard::Tick(float DeltaTime)
@@ -61,22 +63,8 @@ void ADistrictHazard::Tick(float DeltaTime)
 			continue;
 		}
 
-		// Check if we should damage this actor
-		bool bShouldDamage = false;
-
-		// Damage player
-		if (Cast<ANeonCharacter>(Actor))
-		{
-			bShouldDamage = true;
-		}
-
-		// Damage enemies
-		if (Cast<ANeonEnemy>(Actor))
-		{
-			bShouldDamage = true;
-		}
-
-		if (bShouldDamage)
+		// Check if actor is a character or enemy - damage both
+		if (Actor->IsA<ANeonCharacter>() || Actor->IsA<ANeonEnemy>())
 		{
 			ApplyHazardDamage(Actor);
 		}
@@ -102,9 +90,11 @@ void ADistrictHazard::OnHazardBeginOverlap(
 		return;
 	}
 
+#if !UE_BUILD_SHIPPING
 	UE_LOG(LogTemp, Log, TEXT("Actor %s entered %s hazard"),
 		*OtherActor->GetName(),
 		*GetHazardTypeName());
+#endif
 }
 
 void ADistrictHazard::OnHazardEndOverlap(
@@ -121,9 +111,11 @@ void ADistrictHazard::OnHazardEndOverlap(
 	// Remove damage tracking for this actor
 	LastDamageTime.Remove(OtherActor);
 
+#if !UE_BUILD_SHIPPING
 	UE_LOG(LogTemp, Log, TEXT("Actor %s left %s hazard"),
 		*OtherActor->GetName(),
 		*GetHazardTypeName());
+#endif
 }
 
 void ADistrictHazard::ApplyHazardDamage(AActor* HitActor)
@@ -154,11 +146,14 @@ void ADistrictHazard::ApplyHazardDamage(AActor* HitActor)
 	{
 		FDamageEvent DamageEvent;
 		PlayerCharacter->TakeDamage(Damage, DamageEvent, nullptr, this);
+
+#if !UE_BUILD_SHIPPING
 		UE_LOG(LogTemp, Log, TEXT("%s hazard dealt %.0f damage to player. Health: %.0f/%.0f"),
 			*GetHazardTypeName(),
 			Damage,
 			PlayerCharacter->GetHealth(),
 			PlayerCharacter->GetMaxHealth());
+#endif
 	}
 
 	// Apply damage to enemy
@@ -166,11 +161,14 @@ void ADistrictHazard::ApplyHazardDamage(AActor* HitActor)
 	{
 		FDamageEvent DamageEvent;
 		Enemy->TakeDamage(Damage, DamageEvent, nullptr, this);
+
+#if !UE_BUILD_SHIPPING
 		UE_LOG(LogTemp, Log, TEXT("%s hazard dealt %.0f damage to enemy. Health: %.0f/%.0f"),
 			*GetHazardTypeName(),
 			Damage,
 			Enemy->CurrentHealth,
 			Enemy->MaxHealth);
+#endif
 	}
 }
 
