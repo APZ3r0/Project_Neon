@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "MissionTypes.h"
 #include "NeonEnemy.generated.h"
 
 class ANeonCharacter;
@@ -56,6 +57,16 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "AI")
 	bool bIsDead = false;
+
+	// Faction data wired in from mission generation
+	UPROPERTY(BlueprintReadOnly, Category = "AI")
+	FString FactionName = TEXT("Unknown");
+
+	UPROPERTY(BlueprintReadOnly, Category = "AI")
+	TArray<FString> FactionTactics;
+
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	void ConfigureForFaction(const FAscendantFaction& Faction);
 
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

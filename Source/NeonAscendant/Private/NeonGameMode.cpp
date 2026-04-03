@@ -24,6 +24,9 @@ void ANeonGameMode::BeginPlay()
 
 	// Get mission generator singleton
 	MissionGenerator = UMissionGeneratorSingleton::GetGenerator();
+
+	// Start the first mission immediately so enemies, hazards, and HUD are set up on level load
+	StartNewMission();
 }
 
 void ANeonGameMode::StartNewMission()
@@ -128,7 +131,8 @@ void ANeonGameMode::SpawnEnemiesForMission(const FMissionBrief& Mission, int32 E
 		ANeonEnemy* NewEnemy = World->SpawnActor<ANeonEnemy>(EnemyClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
 		if (NewEnemy)
 		{
-			UE_LOG(LogTemp, Log, TEXT("Spawned enemy %d at location (%.0f, %.0f, %.0f)"), 
+			NewEnemy->ConfigureForFaction(Mission.Opposition);
+			UE_LOG(LogTemp, Log, TEXT("Spawned enemy %d at location (%.0f, %.0f, %.0f)"),
 				i + 1, SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
 		}
 	}
@@ -180,9 +184,40 @@ void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
 		ADistrictHazard* NewHazard = World->SpawnActor<ADistrictHazard>(HazardClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
 		if (NewHazard)
 		{
-			// Randomize hazard type
-			int32 HazardTypeIndex = FMath::RandRange(0, 4);
-			NewHazard->HazardType = static_cast<EHazardType>(HazardTypeIndex);
+			// Determine hazard type from district hazard strings (case-insensitive keyword match)
+			EHazardType MappedType = EHazardType::Thermal; // default fallback
+			if (Mission.District.Hazards.Num() > 0)
+			{
+				const FString HazardStr = Mission.District.Hazards[i % Mission.District.Hazards.Num()].ToLower();
+				if (HazardStr.Contains(TEXT("thermal")) || HazardStr.Contains(TEXT("molten")) ||
+					HazardStr.Contains(TEXT("heat"))    || HazardStr.Contains(TEXT("fire"))  ||
+					HazardStr.Contains(TEXT("slag")))
+				{
+					MappedType = EHazardType::Thermal;
+				}
+				else if (HazardStr.Contains(TEXT("electric")) || HazardStr.Contains(TEXT("voltage")) ||
+				         HazardStr.Contains(TEXT("shock"))    || HazardStr.Contains(TEXT("lightning")))
+				{
+					MappedType = EHazardType::Electrical;
+				}
+				else if (HazardStr.Contains(TEXT("toxic"))    || HazardStr.Contains(TEXT("poison")) ||
+				         HazardStr.Contains(TEXT("acid"))     || HazardStr.Contains(TEXT("chemical")))
+				{
+					MappedType = EHazardType::Toxic;
+				}
+				else if (HazardStr.Contains(TEXT("radiation")) || HazardStr.Contains(TEXT("radioactive")) ||
+				         HazardStr.Contains(TEXT("nuclear")))
+				{
+					MappedType = EHazardType::Radiation;
+				}
+				else if (HazardStr.Contains(TEXT("cryo"))  || HazardStr.Contains(TEXT("freeze")) ||
+				         HazardStr.Contains(TEXT("frost")) || HazardStr.Contains(TEXT("cold"))   ||
+				         HazardStr.Contains(TEXT("ice")))
+				{
+					MappedType = EHazardType::Cryogenic;
+				}
+			}
+			NewHazard->HazardType = MappedType;
 			NewHazard->DamagePerSecond = FMath::RandRange(5.0f, 15.0f);
 			NewHazard->EffectRadius = FMath::RandRange(300.0f, 600.0f);
 

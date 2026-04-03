@@ -180,3 +180,11 @@ void ANeonEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	// Enemies don't have player input
 	// This is controlled by the AI controller
 }
+
+void ANeonEnemy::ConfigureForFaction(const FAscendantFaction& Faction)
+{
+	FactionName    = Faction.Name;
+	FactionTactics = Faction.SignatureTactics;
+	UE_LOG(LogTemp, Log, TEXT("ANeonEnemy: configured for faction '%s' (%d tactics)"),
+		*FactionName, FactionTactics.Num());
+}
