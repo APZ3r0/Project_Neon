@@ -1,5 +1,7 @@
 #include "NeonCharacter.h"
 #include "NeonWeapon.h"
+#include "NeonAbility.h"
+#include "MissionTypes.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -279,4 +281,42 @@ void ANeonCharacter::Die()
 
 	// Destroy after delay
 	SetLifeSpan(10.0f);
+}
+
+// ─── Ability system ───────────────────────────────────────────────────────────
+
+void ANeonCharacter::ActivateAbility(int32 Index)
+{
+	if (!Abilities.IsValidIndex(Index))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ANeonCharacter::ActivateAbility — index %d is out of range (Abilities.Num()=%d)."),
+			Index, Abilities.Num());
+		return;
+	}
+
+	UNeonAbility* Ability = Abilities[Index];
+	if (IsValid(Ability))
+	{
+		Ability->Activate();
+	}
+}
+
+void ANeonCharacter::LoadAbilitiesFromArchetype(const FAscendantArchetype& Archetype)
+{
+	// Remove any previously loaded abilities.
+	Abilities.Empty();
+
+	for (const FAscendantAbility& AbilityData : Archetype.SignatureAbilities)
+	{
+		UNeonAbility* NewAbility = NewObject<UNeonAbility>(this);
+		if (IsValid(NewAbility))
+		{
+			NewAbility->InitFromAbilityData(AbilityData);
+			NewAbility->SetOwnerActor(this);
+			Abilities.Add(NewAbility);
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("ANeonCharacter::LoadAbilitiesFromArchetype — loaded %d abilities from archetype '%s'."),
+		Abilities.Num(), *Archetype.Name);
 }

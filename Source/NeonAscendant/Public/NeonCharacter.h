@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "NeonAbility.h"
+#include "MissionTypes.h"
 #include "NeonCharacter.generated.h"
 
 class UCameraComponent;
@@ -93,6 +95,18 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Weapon")
 	TObjectPtr<ANeonWeapon> CurrentWeapon;
+
+	// Abilities
+	UPROPERTY(BlueprintReadOnly, Category = "Abilities")
+	TArray<TObjectPtr<UNeonAbility>> Abilities;
+
+	/** Activate the ability at the given index (0-based). No-op if out of range. */
+	UFUNCTION(BlueprintCallable, Category = "Abilities")
+	void ActivateAbility(int32 Index);
+
+	/** Populate the Abilities array from an archetype's SignatureAbilities list. */
+	UFUNCTION(BlueprintCallable, Category = "Abilities")
+	void LoadAbilitiesFromArchetype(const FAscendantArchetype& Archetype);
 
 private:
 	// Movement configuration
