@@ -24,6 +24,9 @@ void ANeonGameMode::BeginPlay()
 
 	// Get mission generator singleton
 	MissionGenerator = UMissionGeneratorSingleton::GetGenerator();
+
+	// Start the first mission immediately so enemies, hazards, and HUD are set up on level load
+	StartNewMission();
 }
 
 void ANeonGameMode::StartNewMission()
@@ -69,6 +72,18 @@ void ANeonGameMode::StartNewMission()
 					}
 				}
 			}
+
+			// Load abilities onto the player character from the generated archetype
+			if (APawn* PlayerPawn = PC->GetPawn())
+			{
+				if (ANeonCharacter* PlayerCharacter = Cast<ANeonCharacter>(PlayerPawn))
+				{
+					if (IsValid(PlayerCharacter))
+					{
+						PlayerCharacter->LoadAbilitiesFromArchetype(NewMission.Archetype);
+					}
+				}
+			}
 		}
 	}
 }
@@ -110,13 +125,16 @@ void ANeonGameMode::SpawnEnemiesForMission(const FMissionBrief& Mission, int32 E
 
 	UE_LOG(LogTemp, Log, TEXT("Spawning %d enemies for mission vs %s"), EnemyCount, *Mission.Opposition.Name);
 
+	// Use FRandomStream for determinism-compatible spawning instead of global rand.
+	FRandomStream SpawnStream(FMath::Rand());
+
 	for (int32 i = 0; i < EnemyCount; ++i)
 	{
 		// Calculate spawn position: random location around the spawn origin
 		// In a real implementation, use designated spawn points
 		FVector SpawnLocation = SpawnOrigin + FVector(
-			FMath::RandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
-			FMath::RandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
+			SpawnStream.RandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
+			SpawnStream.RandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
 			EnemySpawnHeightOffset
 		);
 
@@ -128,7 +146,8 @@ void ANeonGameMode::SpawnEnemiesForMission(const FMissionBrief& Mission, int32 E
 		ANeonEnemy* NewEnemy = World->SpawnActor<ANeonEnemy>(EnemyClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
 		if (NewEnemy)
 		{
-			UE_LOG(LogTemp, Log, TEXT("Spawned enemy %d at location (%.0f, %.0f, %.0f)"), 
+			NewEnemy->ConfigureForFaction(Mission.Opposition);
+			UE_LOG(LogTemp, Log, TEXT("Spawned enemy %d at location (%.0f, %.0f, %.0f)"),
 				i + 1, SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
 		}
 	}
@@ -152,15 +171,18 @@ void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
 	// Clear previous hazards
 	for (ADistrictHazard* Hazard : ActiveHazards)
 	{
-		if (Hazard)
+		if (IsValid(Hazard))
 		{
 			Hazard->Destroy();
 		}
 	}
 	ActiveHazards.Empty();
 
+	// Use FRandomStream for determinism-compatible spawning instead of global rand.
+	FRandomStream SpawnStream(FMath::Rand());
+
 	// Spawn hazards based on the mission's complication (which relates to district)
-	int32 HazardCount = FMath::RandRange(MinHazardCount, MaxHazardCount);
+	int32 HazardCount = SpawnStream.RandRange(MinHazardCount, MaxHazardCount);
 
 	UE_LOG(LogTemp, Log, TEXT("Spawning %d hazards for district %s"), HazardCount, *Mission.District.Name);
 
@@ -168,8 +190,8 @@ void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
 	{
 		// Calculate spawn position: random location around the level
 		FVector SpawnLocation = FVector(
-			FMath::RandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
-			FMath::RandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
+			SpawnStream.RandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
+			SpawnStream.RandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
 			HazardSpawnHeight
 		);
 
@@ -180,11 +202,42 @@ void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
 		ADistrictHazard* NewHazard = World->SpawnActor<ADistrictHazard>(HazardClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
 		if (NewHazard)
 		{
-			// Randomize hazard type
-			int32 HazardTypeIndex = FMath::RandRange(0, 4);
-			NewHazard->HazardType = static_cast<EHazardType>(HazardTypeIndex);
-			NewHazard->DamagePerSecond = FMath::RandRange(5.0f, 15.0f);
-			NewHazard->EffectRadius = FMath::RandRange(300.0f, 600.0f);
+			// Determine hazard type from district hazard strings (case-insensitive keyword match)
+			EHazardType MappedType = EHazardType::Thermal; // default fallback
+			if (Mission.District.Hazards.Num() > 0)
+			{
+				const FString HazardStr = Mission.District.Hazards[i % Mission.District.Hazards.Num()].ToLower();
+				if (HazardStr.Contains(TEXT("thermal")) || HazardStr.Contains(TEXT("molten")) ||
+					HazardStr.Contains(TEXT("heat"))    || HazardStr.Contains(TEXT("fire"))  ||
+					HazardStr.Contains(TEXT("slag")))
+				{
+					MappedType = EHazardType::Thermal;
+				}
+				else if (HazardStr.Contains(TEXT("electric")) || HazardStr.Contains(TEXT("voltage")) ||
+				         HazardStr.Contains(TEXT("shock"))    || HazardStr.Contains(TEXT("lightning")))
+				{
+					MappedType = EHazardType::Electrical;
+				}
+				else if (HazardStr.Contains(TEXT("toxic"))    || HazardStr.Contains(TEXT("poison")) ||
+				         HazardStr.Contains(TEXT("acid"))     || HazardStr.Contains(TEXT("chemical")))
+				{
+					MappedType = EHazardType::Toxic;
+				}
+				else if (HazardStr.Contains(TEXT("radiation")) || HazardStr.Contains(TEXT("radioactive")) ||
+				         HazardStr.Contains(TEXT("nuclear")))
+				{
+					MappedType = EHazardType::Radiation;
+				}
+				else if (HazardStr.Contains(TEXT("cryo"))  || HazardStr.Contains(TEXT("freeze")) ||
+				         HazardStr.Contains(TEXT("frost")) || HazardStr.Contains(TEXT("cold"))   ||
+				         HazardStr.Contains(TEXT("ice")))
+				{
+					MappedType = EHazardType::Cryogenic;
+				}
+			}
+			NewHazard->HazardType = MappedType;
+			NewHazard->DamagePerSecond = SpawnStream.FRandRange(5.0f, 15.0f);
+			NewHazard->EffectRadius = SpawnStream.FRandRange(300.0f, 600.0f);
 
 			ActiveHazards.Add(NewHazard);
 

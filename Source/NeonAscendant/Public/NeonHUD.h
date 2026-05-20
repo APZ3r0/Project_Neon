@@ -33,7 +33,7 @@ protected:
 	FMissionBrief CurrentMission;
 
 	UPROPERTY(BlueprintReadOnly, Category = "HUD")
-	ANeonCharacter* PlayerCharacter = nullptr;
+	TObjectPtr<ANeonCharacter> PlayerCharacter = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, Category = "HUD")
 	bool bShowMissionBriefing = true;
@@ -72,6 +72,7 @@ protected:
 	void DrawObjectiveTracker();
 	void DrawAmmoCounter();
 	void DrawExtractionIndicator();
+	void DrawAbilityCooldowns();
 
 	// Helper functions
 	FColor GetHealthColor() const;

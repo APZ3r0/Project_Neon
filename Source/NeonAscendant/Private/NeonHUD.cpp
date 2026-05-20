@@ -1,6 +1,7 @@
 #include "NeonHUD.h"
 #include "NeonCharacter.h"
 #include "NeonWeapon.h"
+#include "NeonAbility.h"
 #include "Engine/Canvas.h"
 #include "EngineUtils.h"
 #include "CanvasItem.h"
@@ -31,7 +32,7 @@ void ANeonHUD::DrawHUD()
 {
 	Super::DrawHUD();
 
-	if (!Canvas)
+	if (!GEngine || !Canvas)
 	{
 		return;
 	}
@@ -47,6 +48,7 @@ void ANeonHUD::DrawHUD()
 
 	DrawObjectiveTracker();
 	DrawExtractionIndicator();
+	DrawAbilityCooldowns();
 }
 
 void ANeonHUD::SetMissionBrief(const FMissionBrief& NewMission)
@@ -211,6 +213,58 @@ FColor ANeonHUD::GetHealthColor() const
 	else
 	{
 		return CriticalColor;
+	}
+}
+
+void ANeonHUD::DrawAbilityCooldowns()
+{
+	if (!IsValid(PlayerCharacter))
+	{
+		return;
+	}
+
+	if (PlayerCharacter->Abilities.Num() <= 0)
+	{
+		return;
+	}
+
+	const float LineHeight = 20.0f;
+	const float BottomMargin = 20.0f;
+	const float LeftMargin = 20.0f;
+
+	// Start position: bottom-left corner, stack upward
+	// We compute top of the block so all rows fit above the bottom margin
+	const int32 AbilityCount = PlayerCharacter->Abilities.Num();
+	FVector2D Position = FVector2D(LeftMargin, Canvas->SizeY - BottomMargin - (AbilityCount * LineHeight));
+
+	for (int32 i = 0; i < AbilityCount; ++i)
+	{
+		UNeonAbility* Ability = PlayerCharacter->Abilities[i];
+		if (!IsValid(Ability))
+		{
+			Position.Y += LineHeight;
+			continue;
+		}
+
+		FString DisplayText;
+		FLinearColor DisplayColor;
+
+		if (Ability->CanActivate())
+		{
+			DisplayText = FString::Printf(TEXT("[%s] %s"), (i == 0 ? TEXT("Q") : TEXT("E")), *Ability->AbilityName);
+			DisplayColor = FLinearColor(0.0f, 1.0f, 0.0f, 1.0f); // Green — ready
+		}
+		else
+		{
+			const int32 SecsRemaining = FMath::CeilToInt(Ability->CooldownRemaining);
+			DisplayText = FString::Printf(TEXT("[%s] %s (%ds cd)"), (i == 0 ? TEXT("Q") : TEXT("E")), *Ability->AbilityName, SecsRemaining);
+			DisplayColor = FLinearColor(0.5f, 0.5f, 0.5f, 1.0f); // Grey — on cooldown
+		}
+
+		FCanvasTextItem TextItem(Position, FText::FromString(DisplayText), GEngine->GetSmallFont(), DisplayColor);
+		Canvas->DrawItem(TextItem);
+
+		Position.Y += LineHeight;
 	}
 }
 

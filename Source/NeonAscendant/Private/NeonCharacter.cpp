@@ -1,5 +1,8 @@
 #include "NeonCharacter.h"
 #include "NeonWeapon.h"
+#include "NeonAbility.h"
+#include "NeonAbilities.h"
+#include "MissionTypes.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -86,6 +89,10 @@ void ANeonCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ANeonCharacter::Fire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ANeonCharacter::StopFire);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ANeonCharacter::Reload);
+
+	// Abilities
+	PlayerInputComponent->BindAction("ActivateAbility0", IE_Pressed, this, &ANeonCharacter::ActivateAbility0);
+	PlayerInputComponent->BindAction("ActivateAbility1", IE_Pressed, this, &ANeonCharacter::ActivateAbility1);
 }
 
 FVector ANeonCharacter::GetMovementDirection(EAxis::Type Axis) const
@@ -190,11 +197,17 @@ void ANeonCharacter::EquipWeapon(TSubclassOf<ANeonWeapon> WeaponClass)
 	}
 
 	// Spawn new weapon
+	UWorld* World = GetWorld();
+	if (!IsValid(World))
+	{
+		return;
+	}
+
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = this;
 
-	CurrentWeapon = GetWorld()->SpawnActor<ANeonWeapon>(WeaponClass, SpawnParams);
+	CurrentWeapon = World->SpawnActor<ANeonWeapon>(WeaponClass, SpawnParams);
 
 	if (CurrentWeapon)
 	{
@@ -279,4 +292,53 @@ void ANeonCharacter::Die()
 
 	// Destroy after delay
 	SetLifeSpan(10.0f);
+}
+
+// ─── Ability system ───────────────────────────────────────────────────────────
+
+void ANeonCharacter::ActivateAbility(int32 Index)
+{
+	if (!Abilities.IsValidIndex(Index))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ANeonCharacter::ActivateAbility — index %d is out of range (Abilities.Num()=%d)."),
+			Index, Abilities.Num());
+		return;
+	}
+
+	UNeonAbility* Ability = Abilities[Index];
+	if (IsValid(Ability))
+	{
+		Ability->Activate();
+	}
+}
+
+void ANeonCharacter::LoadAbilitiesFromArchetype(const FAscendantArchetype& Archetype)
+{
+	// Remove any previously loaded abilities.
+	Abilities.Empty();
+
+	for (const FAscendantAbility& AbilityData : Archetype.SignatureAbilities)
+	{
+		// Map ability name to concrete class; fall back to base UNeonAbility.
+		TSubclassOf<UNeonAbility> AbilityClass = UNeonAbility::StaticClass();
+		if (AbilityData.Name == TEXT("EMP Burst"))
+		{
+			AbilityClass = UEMPBurstAbility::StaticClass();
+		}
+		else if (AbilityData.Name == TEXT("Cloak Field"))
+		{
+			AbilityClass = UCloakFieldAbility::StaticClass();
+		}
+
+		UNeonAbility* NewAbility = NewObject<UNeonAbility>(this, AbilityClass);
+		if (IsValid(NewAbility))
+		{
+			NewAbility->InitFromAbilityData(AbilityData);
+			NewAbility->SetOwnerActor(this);
+			Abilities.Add(NewAbility);
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("ANeonCharacter::LoadAbilitiesFromArchetype — loaded %d abilities from archetype '%s'."),
+		Abilities.Num(), *Archetype.Name);
 }
