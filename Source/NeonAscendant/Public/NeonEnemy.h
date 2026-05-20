@@ -49,7 +49,7 @@ public:
 	float AttackRange = 500.0f;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
-	ANeonCharacter* TargetPlayer = nullptr;
+	TObjectPtr<ANeonCharacter> TargetPlayer = nullptr;
 
 	// Get AI controller
 	UFUNCTION(BlueprintPure, Category = "AI")

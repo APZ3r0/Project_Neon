@@ -1,6 +1,7 @@
 #include "NeonCharacter.h"
 #include "NeonWeapon.h"
 #include "NeonAbility.h"
+#include "NeonAbilities.h"
 #include "MissionTypes.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -196,11 +197,17 @@ void ANeonCharacter::EquipWeapon(TSubclassOf<ANeonWeapon> WeaponClass)
 	}
 
 	// Spawn new weapon
+	UWorld* World = GetWorld();
+	if (!IsValid(World))
+	{
+		return;
+	}
+
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = this;
 
-	CurrentWeapon = GetWorld()->SpawnActor<ANeonWeapon>(WeaponClass, SpawnParams);
+	CurrentWeapon = World->SpawnActor<ANeonWeapon>(WeaponClass, SpawnParams);
 
 	if (CurrentWeapon)
 	{
@@ -312,7 +319,18 @@ void ANeonCharacter::LoadAbilitiesFromArchetype(const FAscendantArchetype& Arche
 
 	for (const FAscendantAbility& AbilityData : Archetype.SignatureAbilities)
 	{
-		UNeonAbility* NewAbility = NewObject<UNeonAbility>(this);
+		// Map ability name to concrete class; fall back to base UNeonAbility.
+		TSubclassOf<UNeonAbility> AbilityClass = UNeonAbility::StaticClass();
+		if (AbilityData.Name == TEXT("EMP Burst"))
+		{
+			AbilityClass = UEMPBurstAbility::StaticClass();
+		}
+		else if (AbilityData.Name == TEXT("Cloak Field"))
+		{
+			AbilityClass = UCloakFieldAbility::StaticClass();
+		}
+
+		UNeonAbility* NewAbility = NewObject<UNeonAbility>(this, AbilityClass);
 		if (IsValid(NewAbility))
 		{
 			NewAbility->InitFromAbilityData(AbilityData);

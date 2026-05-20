@@ -125,13 +125,16 @@ void ANeonGameMode::SpawnEnemiesForMission(const FMissionBrief& Mission, int32 E
 
 	UE_LOG(LogTemp, Log, TEXT("Spawning %d enemies for mission vs %s"), EnemyCount, *Mission.Opposition.Name);
 
+	// Use FRandomStream for determinism-compatible spawning instead of global rand.
+	FRandomStream SpawnStream(FMath::Rand());
+
 	for (int32 i = 0; i < EnemyCount; ++i)
 	{
 		// Calculate spawn position: random location around the spawn origin
 		// In a real implementation, use designated spawn points
 		FVector SpawnLocation = SpawnOrigin + FVector(
-			FMath::RandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
-			FMath::RandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
+			SpawnStream.RandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
+			SpawnStream.RandRange(EnemySpawnMinDistance, EnemySpawnMaxDistance),
 			EnemySpawnHeightOffset
 		);
 
@@ -168,15 +171,18 @@ void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
 	// Clear previous hazards
 	for (ADistrictHazard* Hazard : ActiveHazards)
 	{
-		if (Hazard)
+		if (IsValid(Hazard))
 		{
 			Hazard->Destroy();
 		}
 	}
 	ActiveHazards.Empty();
 
+	// Use FRandomStream for determinism-compatible spawning instead of global rand.
+	FRandomStream SpawnStream(FMath::Rand());
+
 	// Spawn hazards based on the mission's complication (which relates to district)
-	int32 HazardCount = FMath::RandRange(MinHazardCount, MaxHazardCount);
+	int32 HazardCount = SpawnStream.RandRange(MinHazardCount, MaxHazardCount);
 
 	UE_LOG(LogTemp, Log, TEXT("Spawning %d hazards for district %s"), HazardCount, *Mission.District.Name);
 
@@ -184,8 +190,8 @@ void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
 	{
 		// Calculate spawn position: random location around the level
 		FVector SpawnLocation = FVector(
-			FMath::RandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
-			FMath::RandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
+			SpawnStream.RandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
+			SpawnStream.RandRange(HazardSpawnMinDistance, HazardSpawnMaxDistance),
 			HazardSpawnHeight
 		);
 
@@ -230,8 +236,8 @@ void ANeonGameMode::SpawnHazardsForMission(const FMissionBrief& Mission)
 				}
 			}
 			NewHazard->HazardType = MappedType;
-			NewHazard->DamagePerSecond = FMath::RandRange(5.0f, 15.0f);
-			NewHazard->EffectRadius = FMath::RandRange(300.0f, 600.0f);
+			NewHazard->DamagePerSecond = SpawnStream.FRandRange(5.0f, 15.0f);
+			NewHazard->EffectRadius = SpawnStream.FRandRange(300.0f, 600.0f);
 
 			ActiveHazards.Add(NewHazard);
 

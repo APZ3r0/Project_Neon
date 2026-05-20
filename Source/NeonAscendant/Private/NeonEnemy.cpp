@@ -33,13 +33,13 @@ void ANeonEnemy::BeginPlay()
 	// Find the player character
 	TargetPlayer = Cast<ANeonCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
-	if (!TargetPlayer)
+	if (!IsValid(TargetPlayer))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ANeonEnemy::BeginPlay - Could not find player character!"));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("ANeonEnemy spawned and detected player at %.0f units"), 
+		UE_LOG(LogTemp, Log, TEXT("ANeonEnemy spawned and detected player at %.0f units"),
 			FVector::Dist(GetActorLocation(), TargetPlayer->GetActorLocation()));
 	}
 
@@ -51,7 +51,7 @@ void ANeonEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bIsDead || !TargetPlayer)
+	if (bIsDead || !IsValid(TargetPlayer))
 	{
 		return;
 	}
@@ -85,7 +85,7 @@ float ANeonEnemy::TakeDamage(float Damage, const FDamageEvent& DamageEvent, ACon
 
 	// Notify AI controller of damage
 	ANeonEnemyController* EnemyController = GetEnemyController();
-	if (EnemyController && TargetPlayer)
+	if (IsValid(EnemyController) && IsValid(TargetPlayer))
 	{
 		EnemyController->OnEnemyDamaged(TargetPlayer->GetActorLocation());
 	}
@@ -139,11 +139,18 @@ void ANeonEnemy::EquipWeapon()
 		return;
 	}
 
+	UWorld* World = GetWorld();
+	if (!IsValid(World))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ANeonEnemy::EquipWeapon - World is invalid, cannot spawn weapon!"));
+		return;
+	}
+
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = this;
 
-	EquippedWeapon = GetWorld()->SpawnActor<ANeonWeapon>(WeaponClass, SpawnParams);
+	EquippedWeapon = World->SpawnActor<ANeonWeapon>(WeaponClass, SpawnParams);
 
 	if (EquippedWeapon)
 	{
@@ -155,7 +162,7 @@ void ANeonEnemy::EquipWeapon()
 
 void ANeonEnemy::FireWeapon()
 {
-	if (!EquippedWeapon || !TargetPlayer)
+	if (!IsValid(EquippedWeapon) || !IsValid(TargetPlayer))
 	{
 		return;
 	}

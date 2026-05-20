@@ -73,6 +73,9 @@ void UCloakFieldAbility::OnActivate_Implementation()
 	UE_LOG(LogTemp, Log, TEXT("UCloakFieldAbility '%s': Cloak activated for %.1f seconds."),
 		*AbilityName, CloakDuration);
 
+	// Clear any existing restore timer before starting a new one.
+	World->GetTimerManager().ClearTimer(CloakRestoreTimerHandle);
+
 	// Restore visibility after cloakDuration using a weak lambda so we don't extend
 	// the lifetime of the ability object if it gets collected.
 	World->GetTimerManager().SetTimer(

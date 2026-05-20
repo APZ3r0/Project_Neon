@@ -74,6 +74,10 @@ void UNeonAbility::StartCooldown()
 	bIsOnCooldown      = true;
 	CooldownRemaining  = CooldownSeconds;
 
+	// Clear any existing timers before starting new ones to prevent stacking.
+	World->GetTimerManager().ClearTimer(CooldownTimerHandle);
+	World->GetTimerManager().ClearTimer(CooldownTickTimerHandle);
+
 	// Main timer: fires once when the cooldown expires.
 	World->GetTimerManager().SetTimer(
 		CooldownTimerHandle,
@@ -99,6 +103,10 @@ void UNeonAbility::OnCooldownFinished()
 	CooldownRemaining = 0.0f;
 
 	UWorld* World = GetWorld();
+	if (!IsValid(World) && IsValid(OwnerActor))
+	{
+		World = OwnerActor->GetWorld();
+	}
 	if (IsValid(World))
 	{
 		World->GetTimerManager().ClearTimer(CooldownTimerHandle);
@@ -106,6 +114,21 @@ void UNeonAbility::OnCooldownFinished()
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("UNeonAbility: '%s' cooldown finished. Ready to activate."), *AbilityName);
+}
+
+void UNeonAbility::BeginDestroy()
+{
+	UWorld* World = GetWorld();
+	if (!IsValid(World) && IsValid(OwnerActor))
+	{
+		World = OwnerActor->GetWorld();
+	}
+	if (IsValid(World))
+	{
+		World->GetTimerManager().ClearTimer(CooldownTimerHandle);
+		World->GetTimerManager().ClearTimer(CooldownTickTimerHandle);
+	}
+	Super::BeginDestroy();
 }
 
 void UNeonAbility::TickCooldown()

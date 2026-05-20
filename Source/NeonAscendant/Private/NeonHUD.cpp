@@ -32,7 +32,7 @@ void ANeonHUD::DrawHUD()
 {
 	Super::DrawHUD();
 
-	if (!Canvas)
+	if (!GEngine || !Canvas)
 	{
 		return;
 	}

@@ -180,7 +180,7 @@ async def run_task(task: str) -> None:
     options = ClaudeAgentOptions(
         cwd=PROJECT_ROOT,
         allowed_tools=["Read", "Glob", "Grep", "Agent"],
-        permission_mode="acceptEdits",
+        permission_mode="default",
         system_prompt=ORCHESTRATOR_PROMPT,
         agents=AGENTS,
         max_turns=40,
@@ -201,6 +201,9 @@ def main() -> None:
         sys.exit(1)
 
     task = " ".join(sys.argv[1:])
+    if len(task) > 2000:
+        print("Error: task string too long (max 2000 chars)")
+        sys.exit(1)
     anyio.run(run_task, task)
 
 

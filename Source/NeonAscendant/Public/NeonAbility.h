@@ -55,6 +55,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Abilities")
 	void SetOwnerActor(AActor* NewOwner);
 
+	virtual void BeginDestroy() override;
+
 private:
 	FTimerHandle CooldownTimerHandle;
 	FTimerHandle CooldownTickTimerHandle;
