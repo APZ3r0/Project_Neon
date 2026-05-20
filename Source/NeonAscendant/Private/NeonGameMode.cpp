@@ -72,6 +72,18 @@ void ANeonGameMode::StartNewMission()
 					}
 				}
 			}
+
+			// Load abilities onto the player character from the generated archetype
+			if (APawn* PlayerPawn = PC->GetPawn())
+			{
+				if (ANeonCharacter* PlayerCharacter = Cast<ANeonCharacter>(PlayerPawn))
+				{
+					if (IsValid(PlayerCharacter))
+					{
+						PlayerCharacter->LoadAbilitiesFromArchetype(NewMission.Archetype);
+					}
+				}
+			}
 		}
 	}
 }

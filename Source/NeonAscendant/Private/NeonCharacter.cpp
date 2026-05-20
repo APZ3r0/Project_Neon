@@ -88,6 +88,10 @@ void ANeonCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &ANeonCharacter::Fire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &ANeonCharacter::StopFire);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &ANeonCharacter::Reload);
+
+	// Abilities
+	PlayerInputComponent->BindAction("ActivateAbility0", IE_Pressed, this, &ANeonCharacter::ActivateAbility0);
+	PlayerInputComponent->BindAction("ActivateAbility1", IE_Pressed, this, &ANeonCharacter::ActivateAbility1);
 }
 
 FVector ANeonCharacter::GetMovementDirection(EAxis::Type Axis) const

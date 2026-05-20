@@ -72,6 +72,7 @@ protected:
 	void DrawObjectiveTracker();
 	void DrawAmmoCounter();
 	void DrawExtractionIndicator();
+	void DrawAbilityCooldowns();
 
 	// Helper functions
 	FColor GetHealthColor() const;

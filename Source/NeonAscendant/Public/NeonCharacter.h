@@ -40,6 +40,10 @@ protected:
 	void StopFire();
 	void Reload();
 
+	// Ability input shims (needed because BindAction cannot pass parameters directly)
+	void ActivateAbility0() { ActivateAbility(0); }
+	void ActivateAbility1() { ActivateAbility(1); }
+
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void EquipWeapon(TSubclassOf<ANeonWeapon> WeaponClass);
 
